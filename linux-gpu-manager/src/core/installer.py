@@ -28,31 +28,51 @@ class DriverInstaller:
     def get_available_versions(self):
         versions = []
         if self.is_macos:
-            return ["550", "535", "470"]
+            return ["550", "535", "525", "470", "390"] # Mock for testing
 
         if self.pkg_manager == "apt":
             # 1. Yöntem: ubuntu-drivers (En sağlıklısı)
-            output = self.runner.run("ubuntu-drivers devices") or ""
-            if output:
-                matches = re.findall(r'nvidia-driver-(\d+)', output)
-                if matches:
-                     versions = sorted(list(set(matches)), key=lambda x: int(x), reverse=True)
+            try:
+                # Sadece yüklüyse çalıştır
+                if self.runner.run("which ubuntu-drivers"):
+                    output = self.runner.run("ubuntu-drivers devices") or ""
+                    if output:
+                        matches = re.findall(r'nvidia-driver-(\d+)', output)
+                        if matches:
+                             versions = sorted(list(set(matches)), key=lambda x: int(x), reverse=True)
+            except Exception as e:
+                self.logger.warning(f"ubuntu-drivers check failed: {e}")
             
-            # 2. Yöntem: Depodan Çekme (apt-cache) - İnternet/Repo bazlı
+            # 2. Yöntem: Depodan Çekme (apt-cache)
+            # Daha hassas arama: --names-only ve regex ankrajları
             if not versions:
                 try:
-                    # Depodaki tüm nvidia-driver-XXX paketlerini listele
-                    raw_out = self.runner.run("apt-cache search ^nvidia-driver-[0-9]+$")
+                    self.logger.info("ubuntu-drivers bulunamadı veya sonuç vermedi, apt-cache kullanılıyor...")
+                    # Sadece Paket İsimlerinde Ara
+                    raw_out = self.runner.run("apt-cache search --names-only ^nvidia-driver-[0-9]+$")
                     if raw_out:
-                        matches = re.findall(r'nvidia-driver-(\d+)', raw_out)
-                        # Sadece mantıklı olanları al (örn: >300)
-                        valid_vers = [v for v in set(matches) if len(v) >= 3 and int(v) > 300]
+                        # Çıktı formatı: "nvidia-driver-535 - Description..."
+                        # Satır satır işleyip, paketin gerçekten nvidia-driver-SAYI ile başlayıp bittiğini (veya boşluk) kontrol edelim
+                        found = set()
+                        for line in raw_out.splitlines():
+                            # İlk kelimeyi al (Paket ismi)
+                            parts = line.split()
+                            if not parts: continue
+                            pkg_name = parts[0]
+                            
+                            # Regex ile tam eşleşme ara
+                            m = re.match(r'^nvidia-driver-(\d+)$', pkg_name)
+                            if m:
+                                found.add(m.group(1))
+                        
+                        # Filtreleme (>300)
+                        valid_vers = [v for v in found if len(v) >= 3 and int(v) > 340]
                         versions = sorted(valid_vers, key=lambda x: int(x), reverse=True)
-                except Exception:
-                    pass
+                except Exception as e:
+                    self.logger.error(f"apt-cache search failed: {e}")
 
         # Hiçbir şey bulunamazsa güvenli varsayılanlar
-        return versions if versions else ["550", "535", "470", "390"] 
+        return versions if versions else ["535", "470"] 
 
     def install_nvidia_closed(self, version=None):
         ver_str = version or 'Otomatik'

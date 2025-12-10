@@ -70,4 +70,3 @@ build_amd64/
 build_arm64/
 *.deb
 .deb
-ro-control-root-task
