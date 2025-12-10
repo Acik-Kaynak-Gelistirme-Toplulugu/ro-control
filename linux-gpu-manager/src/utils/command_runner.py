@@ -30,6 +30,27 @@ class CommandRunner:
             self.logger.debug(f"Komut çalıştırılamadı: {command}. Hata: {e.stderr}")
             return None
 
+    def run_full(self, command):
+        """
+        Komutu çalıştırır ve (return_code, stdout, stderr) demeti döndürür.
+        Hata fırlatmaz, çağırıcı kontrol etmelidir.
+        """
+        if self.os_type == "Darwin":
+            out = self._simulate_linux_output(command)
+            return (0, out, "")
+        
+        try:
+            # stderr'i stdout'a karıştırmadan alıyoruz
+            result = subprocess.run(
+                command, 
+                shell=True, 
+                capture_output=True, # stdout ve stderr ayrı yakalanır
+                text=True
+            )
+            return (result.returncode, result.stdout.strip(), result.stderr.strip())
+        except Exception as e:
+            return (-1, "", str(e))
+
     def _simulate_linux_output(self, command):
         """
         macOS üzerinde geliştirme yaparken Linux komutlarını taklit eder.

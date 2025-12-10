@@ -1,5 +1,6 @@
 from gi.repository import Gtk, GLib, Gdk
 from src.core.tweaks import SystemTweaks
+from src.core.detector import SystemDetector
 import threading
 import time
 
@@ -12,7 +13,9 @@ class PerformanceView(Gtk.Box):
         self.set_margin_end(20)
         
         self.tweaks = SystemTweaks()
+        self.detector = SystemDetector()
         
+        self._build_sys_info()
         self._build_dashboard()
         self._build_controls()
         self._build_tools()
@@ -20,40 +23,117 @@ class PerformanceView(Gtk.Box):
         # Dashboard güncelleme zamanlayıcısı (Her 2 saniyede bir)
         GLib.timeout_add(2000, self._update_stats)
 
-    def _build_dashboard(self):
-        frame = Gtk.Frame(label="Canlı GPU Durumu")
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
-        box.set_margin_top(15); box.set_margin_bottom(15); box.set_margin_start(15); box.set_margin_end(15)
+    def _build_sys_info(self):
+        frame = Gtk.Frame(label="Sistem Özellikleri")
+        grid = Gtk.Grid()
+        grid.set_column_spacing(20); grid.set_row_spacing(10)
+        grid.set_margin_top(15); grid.set_margin_bottom(15); grid.set_margin_start(15); grid.set_margin_end(15)
+
+        info = self.detector.get_full_system_info()
         
-        # Temp
-        vbox1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_temp = Gtk.Label(label="Sıcaklık: --°C")
-        self.bar_temp = Gtk.ProgressBar()
-        vbox1.append(self.lbl_temp); vbox1.append(self.bar_temp)
-        
-        # Load
-        vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_load = Gtk.Label(label="Yük: --%")
-        self.bar_load = Gtk.ProgressBar()
-        vbox2.append(self.lbl_load); vbox2.append(self.bar_load)
-        
-        # VRAM
-        vbox3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_mem = Gtk.Label(label="Bellek: -- / -- MB")
-        self.bar_mem = Gtk.ProgressBar()
-        vbox3.append(self.lbl_mem); vbox3.append(self.bar_mem)
-        
-        # Eşit dağılım
-        vbox1.set_hexpand(True); vbox2.set_hexpand(True); vbox3.set_hexpand(True)
-        box.append(vbox1); box.append(vbox2); box.append(vbox3)
-        frame.set_child(box)
+        # Helper to add rows
+        def add_row(idx, label, value, icon):
+            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            img = Gtk.Image.new_from_icon_name(icon)
+            lbl_t = Gtk.Label(label=label, xalign=0); lbl_t.add_css_class("heading")
+            lbl_v = Gtk.Label(label=value, xalign=0)
+            
+            grid.attach(img, 0, idx, 1, 1)
+            grid.attach(lbl_t, 1, idx, 1, 1)
+            grid.attach(lbl_v, 2, idx, 1, 1)
+
+        add_row(0, "İşletim Sistemi:", info.get("distro", "Linux"), "applications-system-symbolic")
+        add_row(1, "Kernel:", info.get("kernel", "Unknown"), "preferences-system-symbolic")
+        add_row(2, "İşlemci (CPU):", info.get("cpu", "Unknown"), "cpu-symbolic") # cpu-symbolic olmayabilir, computer-chip
+        add_row(3, "Bellek (RAM):", info.get("ram", "Unknown"), "media-flash-symbolic")
+        add_row(4, "Ekran Kartı:", f"{info.get('vendor')} {info.get('model')}", "video-display-symbolic")
+
+        frame.set_child(grid)
         self.append(frame)
 
+    def _build_dashboard(self):
+        # Container Box
+        container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        container.set_margin_top(15); container.set_margin_bottom(15); container.set_margin_start(15); container.set_margin_end(15)
+
+        # Header with Refresh
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        header_box.set_halign(Gtk.Align.END)
+        btn_refresh = Gtk.Button()
+        btn_refresh.set_icon_name("view-refresh-symbolic")
+        btn_refresh.set_tooltip_text("Şimdi Yenile")
+        btn_refresh.connect("clicked", lambda x: self._update_stats())
+        header_box.append(btn_refresh)
+        container.append(header_box)
+
+        # --- 1. GPU Paneli ---
+        frame_gpu = Gtk.Frame(label="Canlı GPU Durumu")
+        gpu_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
+        gpu_box.set_margin_top(15); gpu_box.set_margin_bottom(15); gpu_box.set_margin_start(10); gpu_box.set_margin_end(10)
+
+        # GPU Temp
+        vbox_gt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        self.lbl_temp = Gtk.Label(label="Sıcaklık: --°C")
+        self.bar_temp = Gtk.ProgressBar()
+        vbox_gt.append(self.lbl_temp); vbox_gt.append(self.bar_temp)
+        
+        # GPU Load
+        vbox_gl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        self.lbl_load = Gtk.Label(label="Yük: --%")
+        self.bar_load = Gtk.ProgressBar()
+        vbox_gl.append(self.lbl_load); vbox_gl.append(self.bar_load)
+        
+        # VRAM
+        vbox_gm = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        self.lbl_mem = Gtk.Label(label="VRAM: -- / -- MB")
+        self.bar_mem = Gtk.ProgressBar()
+        vbox_gm.append(self.lbl_mem); vbox_gm.append(self.bar_mem)
+        
+        vbox_gt.set_hexpand(True); vbox_gl.set_hexpand(True); vbox_gm.set_hexpand(True)
+        gpu_box.append(vbox_gt); gpu_box.append(vbox_gl); gpu_box.append(vbox_gm)
+        frame_gpu.set_child(gpu_box)
+        container.append(frame_gpu)
+
+        # --- 2. Sistem Paneli (CPU/RAM) ---
+        frame_sys = Gtk.Frame(label="Canlı Sistem Kullanımı")
+        sys_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
+        sys_box.set_margin_top(15); sys_box.set_margin_bottom(15); sys_box.set_margin_start(10); sys_box.set_margin_end(10)
+
+        # CPU Temp
+        vbox_ct = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        self.lbl_cpu_temp = Gtk.Label(label="CPU Isısı: --°C")
+        self.bar_cpu_temp = Gtk.ProgressBar()
+        vbox_ct.append(self.lbl_cpu_temp); vbox_ct.append(self.bar_cpu_temp)
+
+        # CPU Load
+        vbox_cl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        self.lbl_cpu_load = Gtk.Label(label="CPU Yükü: --%")
+        self.bar_cpu_load = Gtk.ProgressBar()
+        vbox_cl.append(self.lbl_cpu_load); vbox_cl.append(self.bar_cpu_load)
+
+        # RAM Usage
+        vbox_rm = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        self.lbl_ram = Gtk.Label(label="RAM: -- / -- MB")
+        self.bar_ram = Gtk.ProgressBar()
+        vbox_rm.append(self.lbl_ram); vbox_rm.append(self.bar_ram)
+
+        vbox_ct.set_hexpand(True); vbox_cl.set_hexpand(True); vbox_rm.set_hexpand(True)
+        sys_box.append(vbox_ct); sys_box.append(vbox_cl); sys_box.append(vbox_rm)
+        frame_sys.set_child(sys_box)
+        container.append(frame_sys)
+
+        self.append(container)
+
     def _build_controls(self):
-        frame = Gtk.Frame(label="Grafik Modu (Laptop)")
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        box.set_margin_top(15); box.set_margin_bottom(15)
-        box.set_margin_start(15); box.set_margin_end(15)
+        frame = Gtk.Frame(label="Grafik Modu (Hybrid / Mux)")
+        
+        # Ana kutu (Dikey: Üstte kontroller, altta uyarı)
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        main_box.set_margin_top(15); main_box.set_margin_bottom(15)
+        main_box.set_margin_start(15); main_box.set_margin_end(15)
+        
+        # Kontrol Satırı (Yatay)
+        ctrl_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         
         lbl = Gtk.Label(label="Mod Seçin:")
         
@@ -62,6 +142,7 @@ class PerformanceView(Gtk.Box):
         self.combo_prime.append("nvidia", "Performans (NVIDIA)")
         self.combo_prime.append("intel", "Güç Tasarrufu (Intel)")
         self.combo_prime.append("on-demand", "Dengeli (On-Demand)")
+        
         # Mevcut modu seçmeye çalış
         current = self.tweaks.get_prime_profile()
         if current in ["nvidia", "intel", "on-demand"]:
@@ -73,10 +154,29 @@ class PerformanceView(Gtk.Box):
         btn_apply.add_css_class("suggested-action")
         btn_apply.connect("clicked", self._on_prime_apply)
         
-        box.append(lbl)
-        box.append(self.combo_prime)
-        box.append(btn_apply)
-        frame.set_child(box)
+        ctrl_box.append(lbl)
+        ctrl_box.append(self.combo_prime)
+        ctrl_box.append(btn_apply)
+        
+        main_box.append(ctrl_box)
+
+        # Destek Kontrolü
+        if not self.tweaks.is_prime_supported():
+            # Devre dışı bırak
+            self.combo_prime.set_sensitive(False)
+            btn_apply.set_sensitive(False)
+            
+            # Uyarı Ekle
+            warn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            warn_icon = Gtk.Image.new_from_icon_name("dialog-warning-symbolic")
+            warn_lbl = Gtk.Label(label="Bu özellik cihazınız tarafından desteklenmiyor (NVIDIA Optimus/Prime bulunamadı).")
+            warn_lbl.add_css_class("dim-label") # Silik yazı stili
+            
+            warn_box.append(warn_icon)
+            warn_box.append(warn_lbl)
+            main_box.append(warn_box)
+        
+        frame.set_child(main_box)
         self.append(frame)
 
     def _build_tools(self):
@@ -116,13 +216,14 @@ class PerformanceView(Gtk.Box):
         if not self.get_root(): return False
 
         def fetch_data():
-            stats = self.tweaks.get_gpu_stats()
-            GLib.idle_add(self._apply_stats, stats)
+            gpu = self.tweaks.get_gpu_stats()
+            sys = self.tweaks.get_system_stats()
+            GLib.idle_add(self._apply_stats, gpu, sys)
 
         threading.Thread(target=fetch_data, daemon=True).start()
         return True # Timer devam etsin
 
-    def _apply_stats(self, stats):
+    def _apply_stats(self, gpu_stats, sys_stats):
         # Bu metod UI thread içinde çalışır (Güvenli)
         if not self.get_root(): return # Pencere kapanmış olabilir
 
@@ -134,27 +235,36 @@ class PerformanceView(Gtk.Box):
             elif val < 85: bar.add_css_class("p-yellow")
             else: bar.add_css_class("p-red")
 
-        # Temp
-        t = stats.get('temp', 0)
+        # --- GPU ---
+        t = gpu_stats.get('temp', 0)
         self.lbl_temp.set_text(f"Sıcaklık: {t}°C")
-        self.bar_temp.set_fraction(min(t / 100.0, 1.0))
-        set_color(self.bar_temp, t)
+        self.bar_temp.set_fraction(min(t / 100.0, 1.0)); set_color(self.bar_temp, t)
         
-        # Load
-        l = stats.get('load', 0)
+        l = gpu_stats.get('load', 0)
         self.lbl_load.set_text(f"Yük: {l}%")
-        self.bar_load.set_fraction(min(l / 100.0, 1.0))
-        set_color(self.bar_load, l)
+        self.bar_load.set_fraction(min(l / 100.0, 1.0)); set_color(self.bar_load, l)
         
-        # Mem
-        u = stats.get('mem_used', 0)
-        tot = stats.get('mem_total', 1) 
+        u = gpu_stats.get('mem_used', 0)
+        tot = gpu_stats.get('mem_total', 1) 
         if tot == 0: tot = 1
-        
         ratio = (u / tot) * 100
-        self.lbl_mem.set_text(f"Bellek (VRAM/RAM): {u} / {tot} MB")
-        self.bar_mem.set_fraction(min(u / tot, 1.0))
-        set_color(self.bar_mem, ratio)
+        self.lbl_mem.set_text(f"VRAM: {u} / {tot} MB")
+        self.bar_mem.set_fraction(min(u / tot, 1.0)); set_color(self.bar_mem, ratio)
+
+        # --- System ---
+        ct = sys_stats.get('cpu_temp', 0)
+        self.lbl_cpu_temp.set_text(f"CPU Isısı: {ct}°C" if ct > 0 else "CPU Isısı: --")
+        self.bar_cpu_temp.set_fraction(min(ct / 100.0, 1.0)); set_color(self.bar_cpu_temp, ct)
+
+        cl = sys_stats.get('cpu_load', 0)
+        self.lbl_cpu_load.set_text(f"CPU Yükü: {cl}%")
+        self.bar_cpu_load.set_fraction(min(cl / 100.0, 1.0)); set_color(self.bar_cpu_load, cl)
+
+        ru = sys_stats.get('ram_used', 0)
+        rt = sys_stats.get('ram_total', 1)
+        rp = sys_stats.get('ram_percent', 0)
+        self.lbl_ram.set_text(f"RAM: {ru} / {rt} MB")
+        self.bar_ram.set_fraction(min(rp / 100.0, 1.0)); set_color(self.bar_ram, rp)
 
     def _on_prime_apply(self, btn):
         mode = self.combo_prime.get_active_id()

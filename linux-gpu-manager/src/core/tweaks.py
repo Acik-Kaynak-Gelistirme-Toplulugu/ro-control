@@ -9,13 +9,10 @@ class SystemTweaks:
 
     def get_gpu_stats(self):
         """
-        Anlık GPU verilerini çeker. (Sıcaklık, Kullanım, VRAM)
-        NVIDIA yoksa (VM/Virtio), sistem CPU/RAM verilerini Fallback olarak döndürür.
+        NVIDIA GPU verilerini çeker.
         """
         stats = {"temp": 0, "load": 0, "mem_used": 0, "mem_total": 0}
         
-        # 1. NVIDIA Denemesi
-        is_nvidia = False
         if shutil.which("nvidia-smi"):
             try:
                 res = subprocess.run(
@@ -29,45 +26,59 @@ class SystemTweaks:
                         stats["load"] = int(parts[1])
                         stats["mem_used"] = int(parts[2])
                         stats["mem_total"] = int(parts[3])
-                        is_nvidia = True
+                        return stats
             except: pass
-
-        # 2. Fallback (Sanal Makine / Non-NVIDIA)
-        if not is_nvidia:
-            try:
-                # Load (CPU)
-                with open("/proc/loadavg", "r") as f:
-                    load_avg = float(f.read().split()[0]) # 1 dk ortalaması
-                    # Kaba bir yüzde hesabı (Core sayısına bölmeden)
-                    stats["load"] = min(int(load_avg * 100), 100) 
-                
-                # RAM
-                mem_info = {}
-                with open("/proc/meminfo", "r") as f:
-                    for line in f:
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            mem_info[parts[0].strip(":")] = int(parts[1]) # kB
-                
-                if "MemTotal" in mem_info and "MemAvailable" in mem_info:
-                    total = mem_info["MemTotal"] // 1024 # MB
-                    avail = mem_info["MemAvailable"] // 1024 # MB
-                    used = total - avail
-                    stats["mem_total"] = total
-                    stats["mem_used"] = used
-                
-                # Temp (Sanalda zor ama deneyelim)
-                # /sys/class/thermal/thermal_zone0/temp genelde CPU ısısıdır
-                try:
-                     with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
-                         stats["temp"] = int(int(f.read().strip()) / 1000)
-                except:
-                     stats["temp"] = 45 # Dummy değer (VM genelde raporlamaz)
-                     
-            except Exception as e:
-                print(f"DEBUG: Fallback stats error: {e}")
-
+        
+        # Eğer NVIDIA bulunamazsa boş döner (Veya mock dönebiliriz)
+        # Önceki fallback mantığını get_system_stats'a taşıyoruz.
         return stats
+
+    def get_system_stats(self):
+        """
+        Genel Sistem kaynak kullanımını (CPU, RAM, Temp) çeker.
+        """
+        sys_stats = {"cpu_load": 0, "ram_used": 0, "ram_total": 0, "ram_percent": 0, "cpu_temp": 0}
+        
+        try:
+            # CPU Load (Basit ortalama)
+            with open("/proc/loadavg", "r") as f:
+                # 1 dakikalık ortalama yük / Core sayısı tahmini (Basitleştirilmiş)
+                # Tam yüzde için psutil gerekir ama stdlib kullanıyoruz
+                # multiprocessing.cpu_count() ile core sayısını alıp bölebiliriz
+                import multiprocessing
+                load_avg = float(f.read().split()[0])
+                cores = multiprocessing.cpu_count()
+                percent = (load_avg / cores) * 100
+                sys_stats["cpu_load"] = min(int(percent), 100)
+
+            # RAM
+            mem_info = {}
+            with open("/proc/meminfo", "r") as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        mem_info[parts[0].strip(":")] = int(parts[1]) # kB
+
+            if "MemTotal" in mem_info and "MemAvailable" in mem_info:
+                total_mb = mem_info["MemTotal"] // 1024
+                avail_mb = mem_info["MemAvailable"] // 1024
+                used_mb = total_mb - avail_mb
+                sys_stats["ram_total"] = total_mb
+                sys_stats["ram_used"] = used_mb
+                sys_stats["ram_percent"] = int((used_mb / total_mb) * 100)
+
+            # CPU Temp
+            try:
+                # Yaygın thermal zone (x86)
+                with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+                    sys_stats["cpu_temp"] = int(int(f.read().strip()) / 1000)
+            except:
+                sys_stats["cpu_temp"] = 0 # Okunamazsa 0
+                
+        except Exception:
+            pass
+            
+        return sys_stats
 
     def is_gamemode_active(self):
         """Feral GameMode yüklü mü kontrol eder."""

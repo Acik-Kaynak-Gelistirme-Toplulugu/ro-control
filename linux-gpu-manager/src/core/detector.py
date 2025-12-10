@@ -132,3 +132,62 @@ class SystemDetector:
                 self.gpu_info["secure_boot"] = False
         except:
             self.gpu_info["secure_boot"] = False
+
+    def get_full_system_info(self):
+        """
+        GPU, CPU, RAM, OS ve Kernel bilgilerini içeren kapsamlı bir sözlük döndürür.
+        """
+        if not self._is_detected:
+            self.detect()
+            
+        sys_info = self.gpu_info.copy()
+        
+        # CPU Info
+        sys_info["cpu"] = self._get_cpu_info()
+        
+        # RAM Info
+        sys_info["ram"] = self._get_ram_info()
+        
+        # OS & Kernel
+        sys_info["distro"] = self._get_distro_info()
+        sys_info["kernel"] = platform.release()
+        
+        return sys_info
+
+    def _get_cpu_info(self):
+        if platform.system() == "Darwin": return "Apple Silicon (M-Series)"
+        
+        try:
+            # lscpu veya /proc/cpuinfo
+            out = self.runner.run("grep -m1 'model name' /proc/cpuinfo")
+            if out:
+                return out.split(":", 1)[1].strip()
+        except: pass
+        return platform.processor()
+
+    def _get_ram_info(self):
+        if platform.system() == "Darwin": return "16 GB (Simulated)"
+        
+        try:
+            out = self.runner.run("free -h")
+            # Mem: 16G ...
+            if out:
+                lines = out.split("\n")
+                for line in lines:
+                    if "Mem:" in line:
+                        parts = line.split()
+                        return parts[1] # Total RAM
+        except: pass
+        return "Unknown"
+
+    def _get_distro_info(self):
+        if platform.system() == "Darwin": return "macOS"
+        
+        try:
+            # /etc/os-release
+            out = self.runner.run("cat /etc/os-release")
+            if out:
+                name = re.search(r'PRETTY_NAME="(.*)"', out)
+                if name: return name.group(1)
+        except: pass
+        return "Linux"

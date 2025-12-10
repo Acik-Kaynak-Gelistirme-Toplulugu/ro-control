@@ -4,15 +4,26 @@ import re
 import datetime
 from src.core.distro_mgr import DistroManager
 from src.utils.command_runner import CommandRunner
+from src.core.detector import SystemDetector
 
 class DriverInstaller:
     def __init__(self):
         self.logger = logging.getLogger("DriverInstaller")
         self.distro_mgr = DistroManager()
         self.runner = CommandRunner()
+        self.detector = SystemDetector()
         self.os_info = self.distro_mgr.detect()
         self.pkg_manager = self.distro_mgr.get_package_manager()
         self.is_macos = platform.system() == "Darwin"
+        self.log_callback = None
+
+    def set_logger_callback(self, callback):
+        self.log_callback = callback
+
+    def log(self, msg):
+        self.logger.info(msg)
+        if self.log_callback:
+            self.log_callback(msg)
 
     def get_available_versions(self):
         versions = []
@@ -44,8 +55,11 @@ class DriverInstaller:
         return versions if versions else ["550", "535", "470", "390"] 
 
     def install_nvidia_closed(self, version=None):
-        self.logger.info(f"Kapalı Kaynak NVIDIA kurulumu (Ver: {version or 'Auto'})...")
+        ver_str = version or 'Otomatik'
+        self.log(f"--- BAŞLATILIYOR: NVIDIA Proprietary (v{ver_str}) ---")
+        
         commands = self._prepare_install_chain()
+        self.log("Gerekli paketler indirme listesine ekleniyor...")
         
         # 1. Paket Kurulumları
         if self.pkg_manager == "apt":
@@ -61,9 +75,10 @@ class DriverInstaller:
             commands.append("zypper install -y nvidia-glG05")
 
         # 2. Son İşlemler (Blacklist & Initramfs)
+        self.log("Kurulum sonrası işlemler ve Initramfs güncellemeleri hazırlanıyor...")
         commands.extend(self._finalize_installation_chain())
         
-        return self._execute_transaction_bulk(commands)
+        return self._execute_transaction_bulk(commands, "NVIDIA Kapalı Kaynak Kurulumu")
 
     def install_nvidia_open(self, version=None):
         version = version or "535"
@@ -79,7 +94,8 @@ class DriverInstaller:
             commands.append("pacman -Sy --noconfirm nvidia-open nvidia-utils")
 
         commands.extend(self._finalize_installation_chain())
-        return self._execute_transaction_bulk(commands)
+        commands.extend(self._finalize_installation_chain())
+        return self._execute_transaction_bulk(commands, "NVIDIA Açık Kaynak Kurulumu")
 
     def create_timeshift_snapshot(self, comment="Driver Pilot Otomatik Yedek"):
         """Timeshift ile sistem yedeği oluşturur."""
@@ -118,12 +134,13 @@ class DriverInstaller:
         # Initramfs güncelle (Nouveau'yu geri yüklemek için)
         commands.extend(self._update_initramfs_commands())
 
-        return self._execute_transaction_bulk(commands)
+        return self._execute_transaction_bulk(commands, "Sürücü Kaldırma İşlemi")
 
     def install_amd_open(self):
         """AMD Açık Kaynak (Mesa) kurulumu/güncellemesi."""
-        self.logger.info("AMD Open (Mesa) kurulumu/güncellemesi...")
+        self.log("--- BAŞLATILIYOR: AMD Mesa (Open Source) ---")
         commands = self._prepare_install_chain()
+        self.log("AMD sürücü paketleri hazırlanıyor...")
         
         if self.pkg_manager == "apt":
             commands.append("apt-get install -y xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-utils")
@@ -132,7 +149,7 @@ class DriverInstaller:
         elif self.pkg_manager == "pacman":
             commands.append("pacman -Sy --noconfirm xf86-video-amdgpu mesa vulkan-radeon")
             
-        return self._execute_transaction_bulk(commands)
+        return self._execute_transaction_bulk(commands, "AMD Mesa Kurulumu")
 
     def install_amd_closed(self):
         """
@@ -159,9 +176,10 @@ class DriverInstaller:
     def _prepare_install_chain(self):
         """Hazırlık: Yedekleme + Build Tools + Blacklist Oluşturma"""
         chain = []
+        self.log(f"Adım 1: Mevcut Xorg yapılandırması yedekleniyor...")
         chain.extend(self._backup_config_commands())
         
-        # Blacklist Nouveau (Garanti Yöntem)
+        self.log(f"Adım 2: Nouveau sürücüsü engelleniyor (Blacklist)...")
         # echo komutu tek tırnak içinde sorun çıkarabilir, printf daha güvenli veya bash -c içinde hallediyoruz.
         blacklist_content = "blacklist nouveau\noptions nouveau modeset=0"
         chain.append(f"printf '{blacklist_content}' > /etc/modprobe.d/blacklist-nouveau.conf")
@@ -197,10 +215,15 @@ class DriverInstaller:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         return [f"[ -f /etc/X11/xorg.conf ] && cp /etc/X11/xorg.conf /etc/X11/xorg.conf.backup_{timestamp} || true"]
 
-    def _execute_transaction_bulk(self, commands):
+    def _execute_transaction_bulk(self, commands, task_name="İşlem"):
         if not commands: return False
         if self.is_macos:
-            self.logger.info(f"[SIMULATION] Komutlar: {commands}")
+            self.log(f"[SIMULATION] Komutlar çalıştırılıyor: {len(commands)} adet")
+            import time
+            for i in range(5):
+                self.log(f"İşleniyor... %{i*20}")
+                time.sleep(0.5)
+            self.log("İşlem tamamlandı.")
             return True
 
         full_command = " && ".join(commands)
@@ -209,14 +232,44 @@ class DriverInstaller:
         # Sadece komutu birleştirip gönderiyoruz.
         
         # Çift tırnak kaçışlarına dikkat ederek pkexec çalıştır
-        # Yeni Yöntem: Wrapper Script (Daha temiz UI)
         final_cmd = f'pkexec driver-pilot-root-task "{full_command}"'
         
-        self.logger.info("Toplu işlem başlatılıyor...")
-        result = self.runner.run(final_cmd)
+        self.log(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] --- İŞLEM BAŞLATILIYOR: {task_name} ---")
         
-        if result is None:
-            self.logger.error("İşlem hatası.")
+        # 1. Sistem Raporu
+        sys_info = self.detector.get_full_system_info()
+        self.log("\n[SYSTEM DIAGNOSTIC REPORT]")
+        self.log(f"OS: {sys_info.get('distro')} | Kernel: {sys_info.get('kernel')}")
+        self.log(f"CPU: {sys_info.get('cpu')} | RAM: {sys_info.get('ram')}")
+        self.log(f"GPU: {sys_info.get('vendor')} {sys_info.get('model')}")
+        self.log(f"Driver In Use: {sys_info.get('driver_in_use')}")
+        self.log("-" * 40)
+
+        self.log("\n[EXECUTION PLAN]")
+        for i, cmd in enumerate(commands, 1):
+            self.log(f"{i}. {cmd}")
+        self.log("-" * 40 + "\n")
+
+        self.log("Yetki bekleniyor (Root/Admin)...")
+        self.log("Lütfen açılan pencerede şifrenizi girin.\n")
+        
+        # 2. Çalıştırma (Detaylı)
+        ret_code, out, err = self.runner.run_full(final_cmd)
+        
+        if ret_code != 0:
+            self.log("\n[!!! CRITICAL ERROR !!!]")
+            self.log(f"Exit Code: {ret_code}")
+            self.log("Command Output (STDERR):")
+            self.log("vvvvvvvvvvvvvvvvvvvvvvvvvv")
+            self.log(err if err else "(No error output received, check logs or journalctl)")
+            self.log("^^^^^^^^^^^^^^^^^^^^^^^^^^")
+            self.log("HATA: İşlem başarısız oldu. Lütfen yukarıdaki hatayı kontrol edin.")
             return False
-        self.logger.info("İşlem tamamlandı.")
+            
+        if out:
+             self.log("\n[Command Output]")
+             self.log(out)
+
+        self.log(f"\nBAŞARILI: {task_name} tamamlandı.")
+        self.log("Değişikliklerin etkili olması için sistemi yeniden başlatın.")
         return True

@@ -84,6 +84,9 @@ class MainWindow(Gtk.ApplicationWindow):
         # --- Logic Classes ---
         self.detector = SystemDetector()
         self.installer = DriverInstaller()
+        # Log Callback Bağla
+        self.installer.set_logger_callback(lambda msg: self.append_log(msg))
+        
         self.available_versions = self.installer.get_available_versions()
         self.gpu_info = self.detector.detect()
 
@@ -140,55 +143,84 @@ class MainWindow(Gtk.ApplicationWindow):
         self.status_box.append(self.sb_banner)
 
     def create_simple_view(self):
-        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
-        vbox.set_margin_top(40); vbox.set_margin_bottom(40)
-        vbox.set_margin_start(40); vbox.set_margin_end(40)
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=30)
+        vbox.set_margin_top(50); vbox.set_margin_bottom(50)
+        vbox.set_margin_start(100); vbox.set_margin_end(100) # Odaklanmış görünüm
         vbox.set_valign(Gtk.Align.CENTER)
 
-        # Logo ve Büyük Başlık
-        title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        # Başlık ve Logo
+        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
+        title_box.set_halign(Gtk.Align.CENTER)
+        
         icon = self.get_logo_image()
-        icon.set_pixel_size(96)
-        title_box.append(icon)
+        icon.set_pixel_size(64)
         
-        gpu_vendor = self.gpu_info.get('vendor', 'Unknown')
-        gpu_model = self.gpu_info.get('model', 'GPU')
+        text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        text_box.set_valign(Gtk.Align.CENTER)
+        lbl_title = Gtk.Label(label="Kurulum Tipini Seçin"); lbl_title.add_css_class("title-1"); lbl_title.set_xalign(0)
+        lbl_desc = Gtk.Label(label="Donanımınız için optimize edilmiş seçenekler."); lbl_desc.add_css_class("dim-label"); lbl_desc.set_xalign(0)
+        text_box.append(lbl_title); text_box.append(lbl_desc)
         
-        self.simple_gpu_label = Gtk.Label(label=f"{gpu_vendor} {gpu_model}")
-        self.simple_gpu_label.set_css_classes(["title-1", "accent"])
-        title_box.append(self.simple_gpu_label)
-        
+        title_box.append(icon); title_box.append(text_box)
         vbox.append(title_box)
 
-        # Kartlar
-        cards = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=30)
-        cards.set_homogeneous(True)
+        # Seçenekler Listesi
+        opts_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
         
-        # --- Dinamik Kart Mantığı ---
-        is_amd = "AMD" in gpu_vendor or "Advanced Micro Devices" in gpu_vendor
+        # En iyi sürümü belirle
+        best_ver = self.available_versions[0] if self.available_versions else "Auto"
+        is_amd = "AMD" in self.gpu_info.get("vendor", "")
         
+        # Açıklama metni
+        express_title = "Hızlı Kurulum (Önerilen)"
         if is_amd:
-            # AMD İçin Arayüz
-            self.btn_simple_open = self.create_card("security-high-symbolic", "AMD Sürücüleri\n(Mesa/Open)", 
-                "AMD kartlar için en iyi performans ve uyumluluk.\n(Önerilen)", self.on_simple_open_clicked)
-            cards.append(self.btn_simple_open)
+            express_desc = "En güncel AMD Mesa sürücülerini otomatik kurar."
         else:
-            # NVIDIA (veya Diğer) İçin Arayüz
-            self.btn_simple_closed = self.create_card("speedometer-symbolic", "Yüksek Performans\n(NVIDIA Proprietary)", 
-                "Oyun ve Maksimum FPS için.\nKapalı kaynak kodlu resmi sürücü.", self.on_simple_closed_clicked)
-            cards.append(self.btn_simple_closed)
+            express_desc = f"En güncel kararlı NVIDIA v{best_ver} sürücüsünü otomatik kurar."
 
-            self.btn_simple_open = self.create_card("security-high-symbolic", "NVIDIA Open Kernel\n(Resmi Açık Kaynak)", 
-                "Modern kartlar (RTX 20+) için.\nÇekirdek modülü açık kaynaktır. (Nouveau DEĞİLDİR)", self.on_simple_open_clicked)
-            cards.append(self.btn_simple_open)
+        # 1. Hızlı Kurulum Butonu
+        btn_express = self.create_option_row(
+            express_title, express_desc, "emblem-default-symbolic", self.on_express_install_clicked
+        )
+        opts_box.append(btn_express)
         
-        # Reset Butonu (Herkes İçin)
-        self.btn_simple_reset = self.create_card("system-reboot-symbolic", "Sürücüleri Kaldır\n(Nouveau'ya Dön)", 
-            "Tüm NVIDIA/AMD sürücülerini siler.\nSistemi varsayılan Nouveau sürücüsüne döndürür.", self.on_nouveau_clicked)
-        cards.append(self.btn_simple_reset)
+        # 2. Özel Kurulum Butonu
+        btn_custom = self.create_option_row(
+            "Özel Kurulum (Uzman)", 
+            "Sürüm, kernel tipi ve temizlik ayarlarını manuel yapılandırın.", 
+            "preferences-system-symbolic", self.on_custom_install_clicked
+        )
+        opts_box.append(btn_custom)
         
-        vbox.append(cards)
+        vbox.append(opts_box)
         return vbox
+
+    def create_option_row(self, title, desc, icon_name, callback):
+        btn = Gtk.Button()
+        # CSS ile özelleştirilebilir, şimdilik native buton
+        
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
+        row.set_margin_top(15); row.set_margin_bottom(15); row.set_margin_start(20); row.set_margin_end(20)
+        
+        icon = Gtk.Image.new_from_icon_name(icon_name)
+        icon.set_pixel_size(48)
+        
+        text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        text_box.set_valign(Gtk.Align.CENTER)
+        text_box.set_hexpand(True) 
+        
+        lbl_t = Gtk.Label(label=title, xalign=0); lbl_t.add_css_class("heading")
+        lbl_d = Gtk.Label(label=desc, xalign=0); lbl_d.add_css_class("dim-label"); lbl_d.set_wrap(True); lbl_d.set_max_width_chars(60)
+        
+        text_box.append(lbl_t); text_box.append(lbl_d)
+        
+        arrow = Gtk.Image.new_from_icon_name("go-next-symbolic")
+        
+        row.append(icon); row.append(text_box); row.append(arrow)
+        
+        btn.set_child(row)
+        btn.connect("clicked", callback)
+        return btn
 
     def create_pro_view(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
@@ -239,20 +271,33 @@ class MainWindow(Gtk.ApplicationWindow):
         box.append(tools)
         return box
 
-    def create_card(self, icon_name, title, desc, callback):
-        btn = Gtk.Button()
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
-        box.set_margin_top(20); box.set_margin_bottom(20); box.set_margin_start(15); box.set_margin_end(15)
+    def on_custom_install_clicked(self, btn):
+        self.stack.set_visible_child_name("expert")
+
+    def on_express_install_clicked(self, btn):
+        # Hızlı Kurulum Sihirbazı
+        is_amd = "AMD" in self.gpu_info.get("vendor", "")
+        best_ver = self.available_versions[0] if self.available_versions else "Auto"
         
-        icon = Gtk.Image.new_from_icon_name(icon_name)
-        icon.set_pixel_size(64)
-        lbl_t = Gtk.Label(label=title); lbl_t.set_css_classes(["heading"]); lbl_t.set_justify(Gtk.Justification.CENTER)
-        lbl_d = Gtk.Label(label=desc); lbl_d.set_wrap(True); lbl_d.set_justify(Gtk.Justification.CENTER); lbl_d.set_max_width_chars(30)
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.OK_CANCEL, text="Hızlı Kurulum Onayı")
         
-        box.append(icon); box.append(lbl_t); box.append(lbl_d)
-        btn.set_child(box)
-        btn.connect("clicked", callback)
-        return btn
+        if is_amd:
+            desc = "Sisteminiz için en uygun AMD (Mesa) açık kaynak sürücüleri kurulacak.\nDevam etmek istiyor musunuz?"
+            action_code = "install_amd_open"
+        else:
+            desc = f"Sisteminiz için en uygun NVIDIA Proprietary (v{best_ver}) sürücüsü seçildi.\n\nBu işlem oyunlar ve profesyonel uygulamalar için en yüksek performansı sağlar.\nDevam etmek istiyor musunuz?"
+            action_code = "install_nvidia_closed"
+            self.selected_version = best_ver # Otomatik seç
+
+        dialog.format_secondary_text(desc)
+        
+        def on_resp(d, r):
+            d.destroy()
+            if r == Gtk.ResponseType.OK:
+                self.validate_and_start(action_code, "Hızlı Kurulum Başlatılıyor...")
+        
+        dialog.connect("response", on_resp)
+        dialog.show()
 
     def create_log_area(self):
         self.log_expander = Gtk.Expander(label="İşlem Detayları")
@@ -308,6 +353,48 @@ class MainWindow(Gtk.ApplicationWindow):
         # Basit Görünüm Başlığı Güncelle
         if hasattr(self, "simple_gpu_label"):
             self.simple_gpu_label.set_text(f"{gpu.get('vendor')} {gpu.get('model')}")
+
+        # Aktif Sürücüye Göre Buton Durumları
+        driver = gpu.get('driver_in_use', '').lower()
+        is_amd = "amd" in gpu.get('vendor', '').lower()
+
+        # Helper
+        def set_btn_state(btn, is_active_for_this_mode):
+            if is_active_for_this_mode:
+                btn.set_sensitive(False)
+                # Label bulup değiştir (Biraz hacky ama çalışır)
+                child = btn.get_child() 
+                if child and isinstance(child, Gtk.Box):
+                    # Box içindeki 2. eleman title
+                    lbl = child.get_first_child().get_next_sibling()
+                    if isinstance(lbl, Gtk.Label):
+                        text = lbl.get_text()
+                        if "Kurulu" not in text:
+                            lbl.set_text(text + " (Kurulu)")
+            else:
+                btn.set_sensitive(True)
+                # Orijinal metni döndürmek zor, o yüzden reset'te UI yeniden çiziliyor zaten
+
+        if hasattr(self, "btn_simple_closed"):
+             is_nvidia_closed = "nvidia" in driver and "nouveau" not in driver
+             set_btn_state(self.btn_simple_closed, is_nvidia_closed)
+
+        if hasattr(self, "btn_simple_open"):
+             if is_amd:
+                 is_amd_open = "amdgpu" in driver or "radeonsi" in driver
+                 set_btn_state(self.btn_simple_open, is_amd_open)
+             else:
+                 # Nvidia Open Kernel
+                 is_nvidia_open = "nvidia" in driver and "open" in driver # Basit tespit
+                 set_btn_state(self.btn_simple_open, is_nvidia_open)
+
+        # Uzman Modu Butonları
+        if hasattr(self, "btn_closed"):
+            self.btn_closed.set_sensitive(not ("nvidia" in driver and "nouveau" not in driver))
+        if hasattr(self, "btn_open"):
+            self.btn_open.set_sensitive(not ("nvidia" in driver and "open" in driver))
+        if hasattr(self, "btn_nouveau"):
+            self.btn_nouveau.set_sensitive("nouveau" not in driver)
 
     def on_version_changed(self, combo):
         self.selected_version = combo.get_active_id()
