@@ -1,6 +1,8 @@
 from gi.repository import Gtk, GLib, Gdk
 from src.core.tweaks import SystemTweaks
+from src.core.tweaks import SystemTweaks
 from src.core.detector import SystemDetector
+from src.utils.translator import Translator
 import threading
 import time
 
@@ -24,7 +26,7 @@ class PerformanceView(Gtk.Box):
         GLib.timeout_add(2000, self._update_stats)
 
     def _build_sys_info(self):
-        frame = Gtk.Frame(label="Sistem Özellikleri")
+        frame = Gtk.Frame(label=Translator.tr("sys_info_title"))
         grid = Gtk.Grid()
         grid.set_column_spacing(20); grid.set_row_spacing(10)
         grid.set_margin_top(15); grid.set_margin_bottom(15); grid.set_margin_start(15); grid.set_margin_end(15)
@@ -42,11 +44,11 @@ class PerformanceView(Gtk.Box):
             grid.attach(lbl_t, 1, idx, 1, 1)
             grid.attach(lbl_v, 2, idx, 1, 1)
 
-        add_row(0, "İşletim Sistemi:", info.get("distro", "Linux"), "applications-system-symbolic")
-        add_row(1, "Kernel:", info.get("kernel", "Unknown"), "preferences-system-symbolic")
-        add_row(2, "İşlemci (CPU):", info.get("cpu", "Unknown"), "cpu-symbolic") # cpu-symbolic olmayabilir, computer-chip
-        add_row(3, "Bellek (RAM):", info.get("ram", "Unknown"), "media-flash-symbolic")
-        add_row(4, "Ekran Kartı:", f"{info.get('vendor')} {info.get('model')}", "video-display-symbolic")
+        add_row(0, Translator.tr("lbl_os"), info.get("distro", "Linux"), "applications-system-symbolic")
+        add_row(1, Translator.tr("lbl_kernel"), info.get("kernel", "Unknown"), "preferences-system-symbolic")
+        add_row(2, Translator.tr("lbl_cpu"), info.get("cpu", "Unknown"), "computer-chip-symbolic")
+        add_row(3, Translator.tr("lbl_ram"), info.get("ram", "Unknown"), "media-flash-symbolic")
+        add_row(4, Translator.tr("lbl_gpu"), f"{info.get('vendor')} {info.get('model')}", "video-display-symbolic")
 
         frame.set_child(grid)
         self.append(frame)
@@ -67,25 +69,25 @@ class PerformanceView(Gtk.Box):
         container.append(header_box)
 
         # --- 1. GPU Paneli ---
-        frame_gpu = Gtk.Frame(label="Canlı GPU Durumu")
+        frame_gpu = Gtk.Frame(label=Translator.tr("dash_gpu_title"))
         gpu_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
         gpu_box.set_margin_top(15); gpu_box.set_margin_bottom(15); gpu_box.set_margin_start(10); gpu_box.set_margin_end(10)
 
         # GPU Temp
         vbox_gt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_temp = Gtk.Label(label="Sıcaklık: --°C")
+        self.lbl_temp = Gtk.Label(label=f"{Translator.tr('lbl_temp')}: --°C")
         self.bar_temp = Gtk.ProgressBar()
         vbox_gt.append(self.lbl_temp); vbox_gt.append(self.bar_temp)
         
         # GPU Load
         vbox_gl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_load = Gtk.Label(label="Yük: --%")
+        self.lbl_load = Gtk.Label(label=f"{Translator.tr('lbl_load')}: --%")
         self.bar_load = Gtk.ProgressBar()
         vbox_gl.append(self.lbl_load); vbox_gl.append(self.bar_load)
         
         # VRAM
         vbox_gm = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_mem = Gtk.Label(label="VRAM: -- / -- MB")
+        self.lbl_mem = Gtk.Label(label=f"{Translator.tr('lbl_mem')}: -- / -- MB")
         self.bar_mem = Gtk.ProgressBar()
         vbox_gm.append(self.lbl_mem); vbox_gm.append(self.bar_mem)
         
@@ -95,25 +97,25 @@ class PerformanceView(Gtk.Box):
         container.append(frame_gpu)
 
         # --- 2. Sistem Paneli (CPU/RAM) ---
-        frame_sys = Gtk.Frame(label="Canlı Sistem Kullanımı")
+        frame_sys = Gtk.Frame(label=Translator.tr("dash_sys_title"))
         sys_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
         sys_box.set_margin_top(15); sys_box.set_margin_bottom(15); sys_box.set_margin_start(10); sys_box.set_margin_end(10)
 
         # CPU Temp
         vbox_ct = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_cpu_temp = Gtk.Label(label="CPU Isısı: --°C")
+        self.lbl_cpu_temp = Gtk.Label(label=f"{Translator.tr('lbl_cpu_temp')}: --°C")
         self.bar_cpu_temp = Gtk.ProgressBar()
         vbox_ct.append(self.lbl_cpu_temp); vbox_ct.append(self.bar_cpu_temp)
 
         # CPU Load
         vbox_cl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_cpu_load = Gtk.Label(label="CPU Yükü: --%")
+        self.lbl_cpu_load = Gtk.Label(label=f"{Translator.tr('lbl_cpu_load')}: --%")
         self.bar_cpu_load = Gtk.ProgressBar()
         vbox_cl.append(self.lbl_cpu_load); vbox_cl.append(self.bar_cpu_load)
 
         # RAM Usage
         vbox_rm = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        self.lbl_ram = Gtk.Label(label="RAM: -- / -- MB")
+        self.lbl_ram = Gtk.Label(label=f"{Translator.tr('lbl_ram')}: -- / -- MB")
         self.bar_ram = Gtk.ProgressBar()
         vbox_rm.append(self.lbl_ram); vbox_rm.append(self.bar_ram)
 
@@ -125,7 +127,7 @@ class PerformanceView(Gtk.Box):
         self.append(container)
 
     def _build_controls(self):
-        frame = Gtk.Frame(label="Grafik Modu (Hybrid / Mux)")
+        frame = Gtk.Frame(label=Translator.tr("ctrl_title"))
         
         # Ana kutu (Dikey: Üstte kontroller, altta uyarı)
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -135,13 +137,13 @@ class PerformanceView(Gtk.Box):
         # Kontrol Satırı (Yatay)
         ctrl_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         
-        lbl = Gtk.Label(label="Mod Seçin:")
+        lbl = Gtk.Label(label=Translator.tr("ctrl_mode_select"))
         
         # Combo
         self.combo_prime = Gtk.ComboBoxText()
-        self.combo_prime.append("nvidia", "Performans (NVIDIA)")
-        self.combo_prime.append("intel", "Güç Tasarrufu (Intel)")
-        self.combo_prime.append("on-demand", "Dengeli (On-Demand)")
+        self.combo_prime.append("nvidia", Translator.tr("mode_perf"))
+        self.combo_prime.append("intel", Translator.tr("mode_save"))
+        self.combo_prime.append("on-demand", Translator.tr("mode_balanced"))
         
         # Mevcut modu seçmeye çalış
         current = self.tweaks.get_prime_profile()
@@ -150,7 +152,7 @@ class PerformanceView(Gtk.Box):
         else:
             self.combo_prime.set_active_id("on-demand") # Varsayılan
             
-        btn_apply = Gtk.Button(label="Uygula (Reboot Gerekir)")
+        btn_apply = Gtk.Button(label=Translator.tr("btn_apply"))
         btn_apply.add_css_class("suggested-action")
         btn_apply.connect("clicked", self._on_prime_apply)
         
@@ -169,7 +171,7 @@ class PerformanceView(Gtk.Box):
             # Uyarı Ekle
             warn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
             warn_icon = Gtk.Image.new_from_icon_name("dialog-warning-symbolic")
-            warn_lbl = Gtk.Label(label="Bu özellik cihazınız tarafından desteklenmiyor (NVIDIA Optimus/Prime bulunamadı).")
+            warn_lbl = Gtk.Label(label=Translator.tr("msg_prime_unsupported"))
             warn_lbl.add_css_class("dim-label") # Silik yazı stili
             
             warn_box.append(warn_icon)
@@ -180,7 +182,7 @@ class PerformanceView(Gtk.Box):
         self.append(frame)
 
     def _build_tools(self):
-        frame = Gtk.Frame(label="Araçlar ve Optimizasyon")
+        frame = Gtk.Frame(label=Translator.tr("tools_title"))
         grid = Gtk.Grid()
         grid.set_column_spacing(20)
         grid.set_row_spacing(15)
@@ -188,7 +190,7 @@ class PerformanceView(Gtk.Box):
         grid.set_margin_start(15); grid.set_margin_end(15)
         
         # GameMode
-        lbl_game = Gtk.Label(label="Oyun Modu (Feral GameMode):")
+        lbl_game = Gtk.Label(label=Translator.tr("tool_gamemode"))
         lbl_game.set_halign(Gtk.Align.START)
         
         self.switch_game = Gtk.Switch()
@@ -196,10 +198,10 @@ class PerformanceView(Gtk.Box):
         self.switch_game.connect("state-set", self._on_gamemode_toggle)
         
         # Flatpak Fix
-        lbl_flat = Gtk.Label(label="Flatpak/Steam İzin Onarıcı:")
+        lbl_flat = Gtk.Label(label=Translator.tr("tool_flatpak"))
         lbl_flat.set_halign(Gtk.Align.START)
         
-        btn_flat = Gtk.Button(label="Onar")
+        btn_flat = Gtk.Button(label=Translator.tr("btn_repair"))
         btn_flat.connect("clicked", self._on_flatpak_fix)
         
         grid.attach(lbl_game, 0, 0, 1, 1)
@@ -237,33 +239,34 @@ class PerformanceView(Gtk.Box):
 
         # --- GPU ---
         t = gpu_stats.get('temp', 0)
-        self.lbl_temp.set_text(f"Sıcaklık: {t}°C")
+        self.lbl_temp.set_text(f"{Translator.tr('lbl_temp')}: {t}°C")
         self.bar_temp.set_fraction(min(t / 100.0, 1.0)); set_color(self.bar_temp, t)
         
         l = gpu_stats.get('load', 0)
-        self.lbl_load.set_text(f"Yük: {l}%")
+        self.lbl_load.set_text(f"{Translator.tr('lbl_load')}: {l}%")
         self.bar_load.set_fraction(min(l / 100.0, 1.0)); set_color(self.bar_load, l)
         
         u = gpu_stats.get('mem_used', 0)
         tot = gpu_stats.get('mem_total', 1) 
         if tot == 0: tot = 1
         ratio = (u / tot) * 100
-        self.lbl_mem.set_text(f"VRAM: {u} / {tot} MB")
+        self.lbl_mem.set_text(f"{Translator.tr('lbl_mem')}: {u} / {tot} MB")
         self.bar_mem.set_fraction(min(u / tot, 1.0)); set_color(self.bar_mem, ratio)
 
         # --- System ---
         ct = sys_stats.get('cpu_temp', 0)
-        self.lbl_cpu_temp.set_text(f"CPU Isısı: {ct}°C" if ct > 0 else "CPU Isısı: --")
+        text_ct = f"{Translator.tr('lbl_cpu_temp')}: {ct}°C" if ct > 0 else f"{Translator.tr('lbl_cpu_temp')}: --"
+        self.lbl_cpu_temp.set_text(text_ct)
         self.bar_cpu_temp.set_fraction(min(ct / 100.0, 1.0)); set_color(self.bar_cpu_temp, ct)
 
         cl = sys_stats.get('cpu_load', 0)
-        self.lbl_cpu_load.set_text(f"CPU Yükü: {cl}%")
+        self.lbl_cpu_load.set_text(f"{Translator.tr('lbl_cpu_load')}: {cl}%")
         self.bar_cpu_load.set_fraction(min(cl / 100.0, 1.0)); set_color(self.bar_cpu_load, cl)
 
         ru = sys_stats.get('ram_used', 0)
         rt = sys_stats.get('ram_total', 1)
         rp = sys_stats.get('ram_percent', 0)
-        self.lbl_ram.set_text(f"RAM: {ru} / {rt} MB")
+        self.lbl_ram.set_text(f"{Translator.tr('lbl_ram')}: {ru} / {rt} MB")
         self.bar_ram.set_fraction(min(rp / 100.0, 1.0)); set_color(self.bar_ram, rp)
 
     def _on_prime_apply(self, btn):

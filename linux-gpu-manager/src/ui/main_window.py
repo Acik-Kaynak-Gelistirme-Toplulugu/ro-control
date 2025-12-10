@@ -36,6 +36,7 @@ from src.core.installer import DriverInstaller
 from src.core.detector import SystemDetector
 from src.core.repo_manager import RepoManager
 from src.utils.reporter import ErrorReporter
+from src.utils.translator import Translator
 from src.config import AppConfig
 from src.ui.performance_view import PerformanceView
 
@@ -141,7 +142,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.sb_banner.set_revealed(False)
         self.sb_banner.connect("response", lambda w, r: self.sb_banner.set_revealed(False))
         
-        sb_label = Gtk.Label(label="⚠️ Secure Boot Açık! İmzasız sürücüler çalışmayabilir. BIOS'tan kapatmanız önerilir.")
+        sb_label = Gtk.Label(label=Translator.tr("sb_warning"))
         self.sb_banner.add_child(sb_label)
         
         self.status_box.append(self.sb_banner)
@@ -176,11 +177,12 @@ class MainWindow(Gtk.ApplicationWindow):
         is_amd = "AMD" in self.gpu_info.get("vendor", "")
         
         # Açıklama metni
-        express_title = "Hızlı Kurulum (Önerilen)"
+        # Açıklama metni
+        express_title = Translator.tr("express_title")
         if is_amd:
-            express_desc = "En güncel AMD Mesa sürücülerini otomatik kurar."
+            express_desc = Translator.tr("express_desc_amd")
         else:
-            express_desc = f"En güncel kararlı NVIDIA v{best_ver} sürücüsünü otomatik kurar."
+            express_desc = Translator.tr("express_desc_nvidia", best_ver)
 
         # 1. Hızlı Kurulum Butonu
         btn_express = self.create_option_row(
@@ -190,8 +192,8 @@ class MainWindow(Gtk.ApplicationWindow):
         
         # 2. Özel Kurulum Butonu
         btn_custom = self.create_option_row(
-            "Özel Kurulum (Uzman)", 
-            "Sürüm, kernel tipi ve temizlik ayarlarını manuel yapılandırın.", 
+            Translator.tr("custom_title"), 
+            Translator.tr("custom_desc"), 
             "preferences-system-symbolic", self.on_custom_install_clicked
         )
         opts_box.append(btn_custom)
@@ -240,13 +242,13 @@ class MainWindow(Gtk.ApplicationWindow):
         back_btn.connect("clicked", lambda x: self.stack.set_visible_child_name("simple"))
         header.append(back_btn)
         
-        lbl = Gtk.Label(label="Uzman Sürücü Yönetimi"); lbl.add_css_class("title-1")
+        lbl = Gtk.Label(label=Translator.tr("expert_header")); lbl.add_css_class("title-1")
         header.append(lbl)
         box.append(header)
 
         # 1. Konfigürasyon Kartı
         conf_group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        conf_lbl = Gtk.Label(label="Kurulum Ayarları", xalign=0); conf_lbl.add_css_class("heading")
+        conf_lbl = Gtk.Label(label=Translator.tr("expert_conf_title"), xalign=0); conf_lbl.add_css_class("heading")
         conf_group.append(conf_lbl)
         
         conf_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -255,7 +257,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # Versiyon Seçimi Satırı
         ver_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         ver_row.set_margin_top(10); ver_row.set_margin_bottom(10); ver_row.set_margin_start(10); ver_row.set_margin_end(10)
-        ver_label = Gtk.Label(label="Hedef Sürücü Sürümü:")
+        ver_label = Gtk.Label(label=Translator.tr("expert_target_ver"))
         self.ver_combo = Gtk.ComboBoxText()
         for v in self.available_versions: self.ver_combo.append(v, f"NVIDIA v{v}")
         if self.available_versions: self.ver_combo.set_active_id(self.available_versions[0])
@@ -270,7 +272,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # Checkboxlar
         chk_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         chk_box.set_margin_bottom(10); chk_box.set_margin_start(10)
-        self.chk_deep_clean = Gtk.CheckButton(label="Derin Temizlik (Önceki yapılandırmaları sil)")
+        self.chk_deep_clean = Gtk.CheckButton(label=Translator.tr("expert_deep_clean"))
         self.chk_deep_clean.set_active(True)
         chk_box.append(self.chk_deep_clean)
         conf_card.append(chk_box)
@@ -280,7 +282,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         # 2. İşlemler Listesi
         act_group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        act_lbl = Gtk.Label(label="İşlemler", xalign=0); act_lbl.add_css_class("heading")
+        act_lbl = Gtk.Label(label=Translator.tr("expert_actions_title"), xalign=0); act_lbl.add_css_class("heading")
         act_group.append(act_lbl)
         
         # Liste Oluşturucu Helper
@@ -305,12 +307,12 @@ class MainWindow(Gtk.ApplicationWindow):
             if color_class: row.add_css_class(color_class)
             return row
             
-        self.btn_closed = add_action_row("speedometer-symbolic", "Proprietary Sürücüyü Kur", 
-                                         "Seçili versiyonu (Kapalı Kaynak) kurar.", self.on_closed_clicked, "suggested-action")
-        self.btn_open = add_action_row("security-high-symbolic", "Open Kernel Sürücüyü Kur", 
-                                         "Seçili versiyonu (Açık Kaynak Modüllü) kurar.", self.on_open_clicked)
-        self.btn_nouveau = add_action_row("edit-undo-symbolic", "Sürücüleri Kaldır ve Sıfırla", 
-                                          "Sistemi varsayılan Nouveau sürücüsüne döndürür.", self.on_nouveau_clicked, "destructive-action")
+        self.btn_closed = add_action_row("speedometer-symbolic", Translator.tr("expert_btn_proprietary"), 
+                                         Translator.tr("expert_desc_proprietary"), self.on_closed_clicked, "suggested-action")
+        self.btn_open = add_action_row("security-high-symbolic", Translator.tr("expert_btn_open"), 
+                                         Translator.tr("expert_desc_open"), self.on_open_clicked)
+        self.btn_nouveau = add_action_row("edit-undo-symbolic", Translator.tr("expert_btn_reset"), 
+                                          Translator.tr("expert_desc_reset"), self.on_nouveau_clicked, "destructive-action")
                                           
         act_group.append(self.btn_closed)
         act_group.append(self.btn_open)
@@ -319,7 +321,7 @@ class MainWindow(Gtk.ApplicationWindow):
         box.append(act_group)
         
         # Araçlar
-        tool_lbl = Gtk.Label(label="Ekstra Araçlar", xalign=0); tool_lbl.add_css_class("heading")
+        tool_lbl = Gtk.Label(label=Translator.tr("expert_tools_title"), xalign=0); tool_lbl.add_css_class("heading")
         box.append(tool_lbl)
         
         tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -719,6 +721,32 @@ class MainWindow(Gtk.ApplicationWindow):
         main_vbox.append(btn_contain)
         
         win.set_child(main_vbox); win.present()
+
+    def on_express_install_clicked(self, btn):
+        # Hızlı Kurulum Sihirbazı
+        is_amd = "AMD" in self.gpu_info.get("vendor", "")
+        best_ver = self.available_versions[0] if self.available_versions else "Auto"
+        
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.OK_CANCEL, text=Translator.tr("dialog_express_title"))
+        
+        if is_amd:
+            desc = Translator.tr("dialog_express_desc_amd")
+            action_code = "install_amd_open"
+        else:
+            desc = Translator.tr("dialog_express_desc_nvidia", best_ver)
+            action_code = "install_nvidia_closed"
+            self.selected_version = best_ver # Otomatik seç
+
+        # dialog.format_secondary_text(desc) -> AttributeError Fix
+        dialog.props.secondary_text = desc
+        
+        def on_resp(d, r):
+            d.destroy()
+            if r == Gtk.ResponseType.OK:
+                self.validate_and_start(action_code, Translator.tr("msg_trans_start"))
+        
+        dialog.connect("response", on_resp)
+        dialog.show()
 
     def show_error_dialog(self, title, message):
         dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.OK, text=title)
