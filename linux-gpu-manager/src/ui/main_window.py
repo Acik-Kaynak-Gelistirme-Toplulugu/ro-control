@@ -49,7 +49,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.target_action = None
         self.selected_version = None 
         self.is_processing = False
-        self.dark_mode = True # Başlangıç teması
+        self.theme_mode = "system" # system, dark, light
 
         # --- Managers ---
         self.repo_manager = RepoManager()
@@ -68,7 +68,8 @@ class MainWindow(Gtk.ApplicationWindow):
         
         # Tema Butonu
         self.theme_btn = Gtk.Button()
-        self.theme_btn.set_icon_name("weather-clear-symbolic")
+        self.theme_btn.set_icon_name("computer-symbolic")
+        self.theme_btn.set_tooltip_text("Tema: Sistem")
         self.theme_btn.connect("clicked", self.toggle_theme)
         header.pack_end(self.theme_btn)
         
@@ -444,20 +445,50 @@ class MainWindow(Gtk.ApplicationWindow):
 
     # --- Theme & Style ---
     def toggle_theme(self, widget):
-        self.dark_mode = not self.dark_mode
+        # Döngü: System -> Dark -> Light -> System
+        if self.theme_mode == "system":
+            self.theme_mode = "dark"
+        elif self.theme_mode == "dark":
+            self.theme_mode = "light"
+        else:
+            self.theme_mode = "system"
         self.apply_theme()
 
     def apply_theme(self):
+        # İkon ve Tooltip
+        icon_name = "computer-symbolic"
+        tooltip = "Tema: Sistem"
+        
+        if self.theme_mode == "dark":
+            icon_name = "weather-clear-night-symbolic"
+            tooltip = "Tema: Koyu"
+        elif self.theme_mode == "light":
+            icon_name = "weather-clear-symbolic"
+            tooltip = "Tema: Açık"
+
+        if hasattr(self, "theme_btn"): 
+            self.theme_btn.set_icon_name(icon_name)
+            self.theme_btn.set_tooltip_text(tooltip)
+
+        # Temayı Uygula
         if IsAdwaita:
             style_manager = Adw.StyleManager.get_default()
-            if self.dark_mode: style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
-            else: style_manager.set_color_scheme(Adw.ColorScheme.FORCE_LIGHT)
+            if self.theme_mode == "system":
+                style_manager.set_color_scheme(Adw.ColorScheme.DEFAULT)
+            elif self.theme_mode == "dark":
+                style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
+            else:
+                style_manager.set_color_scheme(Adw.ColorScheme.FORCE_LIGHT)
         else:
             settings = Gtk.Settings.get_default()
-            if settings: settings.props.gtk_application_prefer_dark_theme = self.dark_mode
-        
-        icon = "weather-clear-symbolic" if self.dark_mode else "weather-clear-night-symbolic"
-        if hasattr(self, "theme_btn"): self.theme_btn.set_icon_name(icon)
+            if settings: 
+                # Standart GTK'da 'system' demek aslında tercihi 0 yapmaktır
+                if self.theme_mode == "dark":
+                    settings.props.gtk_application_prefer_dark_theme = True
+                elif self.theme_mode == "light":
+                    settings.props.gtk_application_prefer_dark_theme = False
+                else:
+                    settings.props.gtk_application_prefer_dark_theme = False # Varsayılan davranış
 
     def load_css(self):
         p = Gtk.CssProvider()
