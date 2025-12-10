@@ -4,19 +4,19 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0</project_license>
   <name>Driver Pilot</name>
-  <summary>Linux için Akıllı GPU Sürücü Yöneticisi</summary>
+  <summary>Smart GPU Driver Manager for Linux</summary>
   <description>
     <p>
-      Driver Pilot, Linux sistemlerinizde NVIDIA ve AMD grafik kartı sürücülerini
-      kolayca yönetmenizi, kurmanızı ve güncellemenizi sağlayan modern bir araçtır.
+      Driver Pilot is a modern utility designed to simplify the management of NVIDIA and AMD graphics drivers on Linux systems.
+      It provides a user-friendly interface for installation, updates, and system monitoring.
     </p>
-    <p>Özellikler:</p>
+    <p>Key Features:</p>
     <ul>
-      <li>Otomatik GPU tespiti ve en uygun sürücü önerisi</li>
-      <li>Tek tıkla kurulum ve güncelleme</li>
-      <li>Hibrit grafik (Laptop) yönetimi (NVIDIA Prime)</li>
-      <li>Oyun Modu (GameMode) entegrasyonu</li>
-      <li>Canlı GPU performans izleme (Sıcaklık, VRAM, Yük)</li>
+      <li>Express Installation: Automatically detects hardware and installs the optimal drivers.</li>
+      <li>Performance Dashboard: Live monitoring of GPU/CPU temperatures, load, and RAM usage.</li>
+      <li>Hybrid Graphics Control: Manage NVIDIA Prime profiles (Mux Switch) easily.</li>
+      <li>System Safety: Integrated Timeshift backup support and Secure Boot detection.</li>
+      <li>Repository Optimization: Auto-configure the fastest package mirrors for your location.</li>
     </ul>
   </description>
   <launchable type="desktop-id">driver-pilot.desktop</launchable>

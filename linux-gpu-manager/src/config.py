@@ -1,12 +1,20 @@
 class AppConfig:
     APP_NAME = "driver-pilot"
     PRETTY_NAME = "Driver Pilot"
-    VERSION = "1.4.1"
+    VERSION = "1.5.0"
     MAINTAINER = "Sopwith <sopwith.osdev@gmail.com>"
     DESCRIPTION = "Linux sistemleri için akıllı ekran kartı sürücüsü yöneticisi. NVIDIA ve AMD donanımlarını otomatik algılar, en uygun sürücüyü güvenle kurar ve yönetir."
     LICENSE = "GPL-3.0"
     
     CHANGELOG = """
+    v1.5.0 Yenilikleri:
+    - [YENİ] Hızlı Kurulum Sihirbazı: Donanımı analiz edip tek tıkla en doğru sürücüyü kuran akıllı mod.
+    - [YENİ] Mux Switch Koruması: Desteklenmeyen cihazlarda Hybrid Grafik ayarlarını otomatik devre dışı bırakma.
+    - [YENİ] Sistem Dedektifi: Kurulum öncesi ve sırasında detaylı donanım/yazılım analizi ve loglama.
+    - [GELİŞTİRME] Arayüz Sadeleşmesi: Karmaşık 'Uzman' sekmeleri gizlendi, sadece ihtiyaç anında açılır.
+    - [GELİŞTİRME] Performans Monitörü: GPU verilerinin yanına canlı CPU ve RAM istatistikleri eklendi.
+    - [DÜZELTME] GTK4 Kararlılık: Diyalog pencerelerindeki çökme sorunları ve başlatma hataları giderildi.
+
     v1.4.1 Yenilikleri:
     - [YENİ] Tema Motoru: LibAdwaita ile tam uyumlu Aydınlık/Karanlık mod (anlık değişim).
     - [YENİ] Akıllı Arayüz: Sistem AMD ise sadece ilgili butonları göster (yanlış kurulumu önler).

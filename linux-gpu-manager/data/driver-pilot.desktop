@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Driver Pilot
-Comment=Akıllı Linux GPU Sürücü Yöneticisi
+Comment=Smart GPU Driver Manager for Linux
 Exec=driver-pilot
 Icon=driver-pilot
 Terminal=false

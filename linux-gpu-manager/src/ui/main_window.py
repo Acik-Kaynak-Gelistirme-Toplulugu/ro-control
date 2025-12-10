@@ -100,7 +100,9 @@ class MainWindow(Gtk.ApplicationWindow):
 
         main_box.append(self.status_box)
         main_box.append(self.stack) # Stack'i ekle
-        main_box.append(self.create_log_area()) # Alt panel
+        main_box.append(self.status_box)
+        main_box.append(self.stack) # Stack'i ekle
+        # Log alanı kaldırıldı, ProgressView stack içine eklendi
         
         self.set_child(main_box)
 
@@ -108,10 +110,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.simple_view = self.create_simple_view()
         self.expert_view = self.create_pro_view()
         self.perf_view = PerformanceView()
+        self.progress_view = self.create_progress_view() # Yeni İlerleme Ekranı
 
         self.stack.add_titled(self.simple_view, "simple", "Kurulum")
-        self.stack.add_named(self.expert_view, "expert") # Switcher'da görünmez, butondan erişilir
+        self.stack.add_named(self.expert_view, "expert") # Switcher'da görünmez
         self.stack.add_titled(self.perf_view, "performance", "Performans")
+        self.stack.add_named(self.progress_view, "progress") # İşlem sırasındaki ekran
         
         # İlk tarama
         GLib.timeout_add(500, self.run_initial_scan)
@@ -223,112 +227,169 @@ class MainWindow(Gtk.ApplicationWindow):
         return btn
 
     def create_pro_view(self):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
-        box.set_margin_top(20); box.set_margin_bottom(20); box.set_margin_start(40); box.set_margin_end(40)
-
-        box.append(Gtk.Label(label="Uzman Sürücü Yönetimi", css_classes=["title-1"]))
-        
-        # Versiyon Seçimi
-        ver_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        ver_box.set_halign(Gtk.Align.CENTER)
-        ver_box.append(Gtk.Label(label="Versiyon Seç:"))
-        self.ver_combo = Gtk.ComboBoxText()
-        for v in self.available_versions: self.ver_combo.append(v, f"v{v}")
-        if self.available_versions: self.ver_combo.set_active(0)
-        self.ver_combo.connect("changed", self.on_version_changed)
-        ver_box.append(self.ver_combo)
-        box.append(ver_box)
-        
-        # Seçenekler (Checkboxlar)
-        opts_chk = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
-        opts_chk.set_halign(Gtk.Align.CENTER)
-        
-        self.chk_deep_clean = Gtk.CheckButton(label="Derin Temizlik (Kalıntıları Sil)")
-        self.chk_deep_clean.set_active(True)
-        opts_chk.append(self.chk_deep_clean)
-        
-        box.append(opts_chk)
-
-        # İşlem Butonları
-        opts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
-        opts.set_homogeneous(True)
-        self.btn_nouveau = Gtk.Button(label="Sıfırla (Nouveau)"); self.btn_nouveau.connect("clicked", self.on_nouveau_clicked); opts.append(self.btn_nouveau)
-        self.btn_open = Gtk.Button(label="Open Kernel"); self.btn_open.connect("clicked", self.on_open_clicked); opts.append(self.btn_open)
-        self.btn_closed = Gtk.Button(label="Proprietary"); self.btn_closed.connect("clicked", self.on_closed_clicked); opts.append(self.btn_closed)
-        box.append(opts)
-
-        # Repo ve Araçlar
-        tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        tools.set_halign(Gtk.Align.CENTER)
-        
-        btn_repo = Gtk.Button(label="Repoları İyileştir (Konum Bazlı)"); 
-        btn_repo.set_icon_name("network-server-symbolic")
-        btn_repo.connect("clicked", self.on_optimize_clicked)
-        tools.append(btn_repo)
-        
-        btn_scan = Gtk.Button(label="Yeniden Tara"); btn_scan.connect("clicked", self.on_scan_clicked); tools.append(btn_scan)
-        btn_test = Gtk.Button(label="Test (Glxgears)"); btn_test.connect("clicked", self.on_test_clicked); tools.append(btn_test)
-        box.append(tools)
-        return box
-
-    def on_custom_install_clicked(self, btn):
-        self.stack.set_visible_child_name("expert")
-
-    def on_express_install_clicked(self, btn):
-        # Hızlı Kurulum Sihirbazı
-        is_amd = "AMD" in self.gpu_info.get("vendor", "")
-        best_ver = self.available_versions[0] if self.available_versions else "Auto"
-        
-        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.OK_CANCEL, text="Hızlı Kurulum Onayı")
-        
-        if is_amd:
-            desc = "Sisteminiz için en uygun AMD (Mesa) açık kaynak sürücüleri kurulacak.\nDevam etmek istiyor musunuz?"
-            action_code = "install_amd_open"
-        else:
-            desc = f"Sisteminiz için en uygun NVIDIA Proprietary (v{best_ver}) sürücüsü seçildi.\n\nBu işlem oyunlar ve profesyonel uygulamalar için en yüksek performansı sağlar.\nDevam etmek istiyor musunuz?"
-            action_code = "install_nvidia_closed"
-            self.selected_version = best_ver # Otomatik seç
-
-        # dialog.format_secondary_text(desc) -> AttributeError Fix
-        dialog.props.secondary_text = desc
-        
-        def on_resp(d, r):
-            d.destroy()
-            if r == Gtk.ResponseType.OK:
-                self.validate_and_start(action_code, "Hızlı Kurulum Başlatılıyor...")
-        
-        dialog.connect("response", on_resp)
-        dialog.show()
-
-    def create_log_area(self):
-        self.log_expander = Gtk.Expander(label="İşlem Detayları")
-        self.log_view = Gtk.TextView(editable=False, monospace=True)
-        self.log_buffer = self.log_view.get_buffer()
-        
+        # Modern, Gruplandırılmış Uzman Görünümü
         scroll = Gtk.ScrolledWindow()
-        scroll.set_min_content_height(120)
-        scroll.set_child(self.log_view)
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         
-        ctrl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        box.set_margin_top(40); box.set_margin_bottom(40); box.set_margin_start(100); box.set_margin_end(100)
+        
+        # Başlık
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
+        back_btn = Gtk.Button(icon_name="go-previous-symbolic")
+        back_btn.connect("clicked", lambda x: self.stack.set_visible_child_name("simple"))
+        header.append(back_btn)
+        
+        lbl = Gtk.Label(label="Uzman Sürücü Yönetimi"); lbl.add_css_class("title-1")
+        header.append(lbl)
+        box.append(header)
+
+        # 1. Konfigürasyon Kartı
+        conf_group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        conf_lbl = Gtk.Label(label="Kurulum Ayarları", xalign=0); conf_lbl.add_css_class("heading")
+        conf_group.append(conf_lbl)
+        
+        conf_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        conf_card.add_css_class("card") # Varsa CSS, yoksa default
+        
+        # Versiyon Seçimi Satırı
+        ver_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        ver_row.set_margin_top(10); ver_row.set_margin_bottom(10); ver_row.set_margin_start(10); ver_row.set_margin_end(10)
+        ver_label = Gtk.Label(label="Hedef Sürücü Sürümü:")
+        self.ver_combo = Gtk.ComboBoxText()
+        for v in self.available_versions: self.ver_combo.append(v, f"NVIDIA v{v}")
+        if self.available_versions: self.ver_combo.set_active_id(self.available_versions[0])
+        else: self.ver_combo.append("auto", "Otomatik"); self.ver_combo.set_active(0)
+        self.ver_combo.connect("changed", self.on_version_changed)
+        
+        ver_row.append(ver_label)
+        ver_row.append(Gtk.Label(label="   ")) # Spacer
+        ver_row.append(self.ver_combo)
+        conf_card.append(ver_row)
+        
+        # Checkboxlar
+        chk_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        chk_box.set_margin_bottom(10); chk_box.set_margin_start(10)
+        self.chk_deep_clean = Gtk.CheckButton(label="Derin Temizlik (Önceki yapılandırmaları sil)")
+        self.chk_deep_clean.set_active(True)
+        chk_box.append(self.chk_deep_clean)
+        conf_card.append(chk_box)
+        
+        conf_group.append(conf_card)
+        box.append(conf_group)
+
+        # 2. İşlemler Listesi
+        act_group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        act_lbl = Gtk.Label(label="İşlemler", xalign=0); act_lbl.add_css_class("heading")
+        act_group.append(act_lbl)
+        
+        # Liste Oluşturucu Helper
+        def add_action_row(icon, title, desc, callback, color_class=""):
+            row = Gtk.Button()
+            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
+            row_box.set_margin_top(15); row_box.set_margin_bottom(15); row_box.set_margin_start(15); row_box.set_margin_end(15)
+            
+            img = Gtk.Image.new_from_icon_name(icon); img.set_pixel_size(32)
+            
+            txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            txt.set_hexpand(True)
+            l1 = Gtk.Label(label=title, xalign=0); l1.add_css_class("heading")
+            l2 = Gtk.Label(label=desc, xalign=0); l2.add_css_class("dim-label")
+            txt.append(l1); txt.append(l2)
+            
+            arr = Gtk.Image.new_from_icon_name("go-next-symbolic")
+            
+            row_box.append(img); row_box.append(txt); row_box.append(arr)
+            row.set_child(row_box)
+            row.connect("clicked", callback)
+            if color_class: row.add_css_class(color_class)
+            return row
+            
+        self.btn_closed = add_action_row("speedometer-symbolic", "Proprietary Sürücüyü Kur", 
+                                         "Seçili versiyonu (Kapalı Kaynak) kurar.", self.on_closed_clicked, "suggested-action")
+        self.btn_open = add_action_row("security-high-symbolic", "Open Kernel Sürücüyü Kur", 
+                                         "Seçili versiyonu (Açık Kaynak Modüllü) kurar.", self.on_open_clicked)
+        self.btn_nouveau = add_action_row("edit-undo-symbolic", "Sürücüleri Kaldır ve Sıfırla", 
+                                          "Sistemi varsayılan Nouveau sürücüsüne döndürür.", self.on_nouveau_clicked, "destructive-action")
+                                          
+        act_group.append(self.btn_closed)
+        act_group.append(self.btn_open)
+        act_group.append(self.btn_nouveau)
+        
+        box.append(act_group)
+        
+        # Araçlar
+        tool_lbl = Gtk.Label(label="Ekstra Araçlar", xalign=0); tool_lbl.add_css_class("heading")
+        box.append(tool_lbl)
+        
+        tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        tools.set_homogeneous(True)
+        
+        btn_repo = Gtk.Button(label="Repo Fix"); btn_repo.connect("clicked", self.on_optimize_clicked)
+        btn_scan = Gtk.Button(label="Yeniden Tara"); btn_scan.connect("clicked", self.on_scan_clicked)
+        btn_test = Gtk.Button(label="Test (glxgears)"); btn_test.connect("clicked", self.on_test_clicked)
+        
+        tools.append(btn_repo); tools.append(btn_scan); tools.append(btn_test)
+        box.append(tools)
+        
+        scroll.set_child(box)
+        return scroll
+
+    def create_progress_view(self):
+        """İşlem sırasında gösterilecek odaklanmış ekran."""
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        vbox.set_valign(Gtk.Align.CENTER); vbox.set_halign(Gtk.Align.CENTER)
+        vbox.set_margin_top(50); vbox.set_margin_bottom(50)
+        vbox.set_margin_start(100); vbox.set_margin_end(100)
+
+        # Animasyon / İkon
+        self.spinner = Gtk.Spinner()
+        self.spinner.set_size_request(64, 64)
+        self.spinner.start()
+        vbox.append(self.spinner)
+        
+        # Durum Metni
+        self.lbl_progress_title = Gtk.Label(label="İşlem Yapılıyor..."); self.lbl_progress_title.add_css_class("title-1")
+        self.lbl_progress_desc = Gtk.Label(label="Lütfen bekleyin, sistem yapılandırılıyor..."); self.lbl_progress_desc.add_css_class("dim-label")
+        vbox.append(self.lbl_progress_title)
+        vbox.append(self.lbl_progress_desc)
         
         # Progress Bar
         self.progress_bar = Gtk.ProgressBar()
-        self.progress_bar.set_text("Hazır")
+        self.progress_bar.set_size_request(300, 20)
+        self.progress_bar.set_pulse_step(0.05)
         self.progress_bar.set_show_text(True)
-        ctrl.append(self.progress_bar)
-        ctrl.append(scroll)
+        vbox.append(self.progress_bar)
         
-        btn_save = Gtk.Button(label="Log Kaydet", halign=Gtk.Align.END)
+        # Log Expander (Varsayılan kapalı)
+        self.log_expander = Gtk.Expander(label="Detayları Göster")
+        
+        log_scroll = Gtk.ScrolledWindow()
+        log_scroll.set_min_content_height(200); log_scroll.set_max_content_height(300); log_scroll.set_min_content_width(500)
+        
+        self.log_view = Gtk.TextView(editable=False, monospace=True)
+        self.log_buffer = self.log_view.get_buffer()
+        log_scroll.set_child(self.log_view)
+        
+        # Log Kontrolleri
+        log_ctrl = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        log_ctrl.append(log_scroll)
+        
+        btn_save = Gtk.Button(label="Logu Kaydet", halign=Gtk.Align.END)
         btn_save.connect("clicked", self.on_save_log_clicked)
-        ctrl.append(btn_save)
+        log_ctrl.append(btn_save)
         
-        self.log_expander.set_child(ctrl)
+        self.log_expander.set_child(log_ctrl)
+        vbox.append(self.log_expander)
         
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.set_margin_top(10)
-        box.set_margin_start(20); box.set_margin_end(20); box.set_margin_bottom(20)
-        box.append(self.log_expander)
-        return box
+        # Bitiş Butonu (Başta gizli)
+        self.btn_done = Gtk.Button(label="Ana Menüye Dön")
+        self.btn_done.add_css_class("suggested-action")
+        self.btn_done.set_visible(False)
+        self.btn_done.connect("clicked", lambda x: self.stack.set_visible_child_name("simple"))
+        vbox.append(self.btn_done)
+        
+        return vbox
 
     # --- Actions ---
     def check_network(self):
@@ -463,12 +524,22 @@ class MainWindow(Gtk.ApplicationWindow):
         dialog.show()
 
     # --- Threading ---
+    # --- Threading ---
     def start_transaction(self, msg, snapshot=False):
-        self.log_expander.set_expanded(True)
+        # UI'ı Progress Moduna Al
+        self.stack.set_visible_child_name("progress")
+        self.btn_done.set_visible(False)
+        self.spinner.start()
+        
+        self.lbl_progress_title.set_text("İşlem Başlatılıyor")
+        self.lbl_progress_desc.set_text(msg)
+        
         self.log_buffer.set_text("")
         self.append_log(msg)
         self.is_processing = True
         self.progress_bar.set_text("İşleniyor...")
+        self.progress_bar.set_fraction(0.1)
+        
         threading.Thread(target=self._worker, args=(snapshot,), daemon=True).start()
         GLib.timeout_add(100, self._update_progress)
 
@@ -519,14 +590,26 @@ class MainWindow(Gtk.ApplicationWindow):
     def _on_finished(self, success):
         self.is_processing = False
         self.progress_bar.set_fraction(1.0)
+        self.spinner.stop()
+        self.btn_done.set_visible(True) # Dönüş butonunu göster
+        
         self.on_scan_clicked(None)
+        
         if success:
-             self.progress_bar.set_text("Tamamlandı"); self.append_log("BAŞARILI")
+             self.progress_bar.set_text("Tamamlandı")
+             self.lbl_progress_title.set_text("İşlem Başarıyla Tamamlandı")
+             self.lbl_progress_desc.set_text("Logları kontrol edebilir veya ana menüye dönebilirsiniz.")
+             self.append_log("BAŞARILI")
+             
              if "optimize" in str(self.target_action): return # Reboot isteme
              self.show_reboot_dialog()
         else:
-             self.progress_bar.set_text("Hata"); self.append_log("HATA")
-             self.show_report_dialog("İşlem başarısız oldu.")
+             self.progress_bar.set_text("Hata")
+             self.lbl_progress_title.set_text("İşlem Sırasında Hata Oluştu")
+             self.lbl_progress_desc.set_text("Lütfen aşağıdaki detayları inceleyin.")
+             self.append_log("HATA")
+             self.log_expander.set_expanded(True) # Hatada logu otomatik aç
+             # self.show_report_dialog("İşlem başarısız oldu.") # Artık log ekranındayız, popup'a gerek olmayabilir ama kalsın.
 
     def append_log(self, msg):
         GLib.idle_add(lambda: self.log_buffer.insert(self.log_buffer.get_end_iter(), f"\n> {msg}"))
