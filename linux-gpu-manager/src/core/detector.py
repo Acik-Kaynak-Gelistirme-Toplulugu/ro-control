@@ -1,6 +1,7 @@
 import re
 import shutil
 import platform
+import os
 from src.utils.command_runner import CommandRunner
 
 class SystemDetector:
@@ -152,6 +153,9 @@ class SystemDetector:
         sys_info["distro"] = self._get_distro_info()
         sys_info["kernel"] = platform.release()
         
+        # Display Server (X11/Wayland)
+        sys_info["display_server"] = os.environ.get("XDG_SESSION_TYPE", "Unknown")
+        
         return sys_info
 
     def _get_cpu_info(self):
@@ -177,17 +181,12 @@ class SystemDetector:
                     if line.startswith("Mem:") or "Mem:" in line:
                         parts = line.split()
                         # Mem: Total Used ... (Index 1 is Total)
-                        # But sometimes split behaves differently on spaces
-                        # free output:
-                        #               total        used        free      shared  buff/cache   available
-                        # Mem:           15Gi       3.2Gi        11Gi       1.0Mi       856Mi        11Gi
-                        # If "Mem:" is part[0], then part[1] is total.
                         if parts[0].startswith("Mem"):
-                             return parts[1]
+                             return parts[1].replace("Gi", "GB").replace("Mi", "MB")
                         # Handling verify
                         for i, p in enumerate(parts):
                              if "Mem" in p and i+1 < len(parts):
-                                  return parts[i+1]
+                                  return parts[i+1].replace("Gi", "GB").replace("Mi", "MB")
         except: pass
         return "Unknown"
 

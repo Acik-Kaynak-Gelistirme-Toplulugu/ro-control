@@ -44,7 +44,29 @@ class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app)
         self.set_title(AppConfig.PRETTY_NAME)
-        self.set_default_size(950, 680) 
+        
+        # Dinamik Çözünürlük Ayarı
+        self.set_resizable(True) # Kullanıcı boyutlandırabilsin
+        
+        default_w, default_h = 950, 680
+        try:
+            display = Gdk.Display.get_default()
+            monitors = display.get_monitors()
+            if monitors and monitors.get_n_items() > 0:
+                monitor = monitors.get_item(0) # Birinci monitör
+                geometry = monitor.get_geometry()
+                
+                # Ekranın %60'ı kadar genişlik ve %70'i kadar yükseklik
+                # Ancak minimum limitlerin altında kalmasın
+                scale_w = int(geometry.width * 0.6)
+                scale_h = int(geometry.height * 0.7)
+                
+                default_w = max(950, min(scale_w, 1600))
+                default_h = max(680, min(scale_h, 1200))
+        except:
+            pass # Gdk hatası olursa varsayılan kullanılır
+            
+        self.set_default_size(default_w, default_h) 
         self.load_css()
 
         self.target_action = None
@@ -85,27 +107,43 @@ class MainWindow(Gtk.ApplicationWindow):
         # --- Logic Classes ---
         self.detector = SystemDetector()
         self.installer = DriverInstaller()
+        from src.core.updater import AppUpdater
+        self.updater = AppUpdater()
+        
         # Log Callback Bağla
         self.installer.set_logger_callback(lambda msg: self.append_log(msg))
+        self.repo_manager.set_logger_callback(lambda msg: self.append_log(msg))
         
         self.available_versions = self.installer.get_available_versions()
         self.gpu_info = self.detector.detect()
 
         # --- Main Layout ---
+        # Ana kutuyu ScrolledWindow içine alalım
+        # Böylece ekran küçülse veya tam ekran olsa bile içerik taşmaz, ortalanır
+        self.scroll_container = Gtk.ScrolledWindow()
+        self.scroll_container.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC) # Yatay kapalı, Dikey otomatik
+        
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        # İçeriği dikey ve yatayda esneyecek şekilde ayarla
+        main_box.set_vexpand(True)
+        main_box.set_hexpand(True)
         
         # Header Info (Banner)
         self.status_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.create_info_bars() 
-        self._update_ui_state() # İlk metinleri ayarla
+        self._update_ui_state() 
 
         main_box.append(self.status_box)
         main_box.append(self.stack) # Stack'i ekle
-        main_box.append(self.status_box)
-        main_box.append(self.stack) # Stack'i ekle
-        # Log alanı kaldırıldı, ProgressView stack içine eklendi
         
-        self.set_child(main_box)
+        self.scroll_container.set_child(main_box)
+        self.set_child(self.scroll_container)
+
+        # Responsive Layout Listener
+        # Pencere boyutu değiştikçe tetiklenir
+        self.connect("notify::default-width", self._on_window_resize)
+        # Ayrıca başlangıçta bir kez tetikle
+        self.connect("map", self._on_window_resize)
 
         # --- Sayfaları Oluştur ve Ekle ---
         self.simple_view = self.create_simple_view()
@@ -241,6 +279,13 @@ class MainWindow(Gtk.ApplicationWindow):
         back_btn = Gtk.Button(icon_name="go-previous-symbolic")
         back_btn.connect("clicked", lambda x: self.stack.set_visible_child_name("simple"))
         header.append(back_btn)
+
+        # Refresh Butonu
+        refresh_btn = Gtk.Button(icon_name="view-refresh-symbolic")
+        refresh_btn.set_tooltip_text("Donanımı Yeniden Tara")
+        refresh_btn.add_css_class("flat") # Şeffaf/Sade görünüm
+        refresh_btn.connect("clicked", self.on_scan_clicked)
+        header.append(refresh_btn)
         
         lbl = Gtk.Label(label=Translator.tr("expert_header")); lbl.add_css_class("title-1")
         header.append(lbl)
@@ -286,12 +331,14 @@ class MainWindow(Gtk.ApplicationWindow):
         act_group.append(act_lbl)
         
         # Liste Oluşturucu Helper
-        def add_action_row(icon, title, desc, callback, color_class=""):
+        def add_action_row(icon, title, desc, callback, action_style=""):
             row = Gtk.Button()
-            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
-            row_box.set_margin_top(15); row_box.set_margin_bottom(15); row_box.set_margin_start(15); row_box.set_margin_end(15)
+            row.add_css_class("list-button") # Yeni şık stil
             
-            img = Gtk.Image.new_from_icon_name(icon); img.set_pixel_size(32)
+            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
+            row_box.set_margin_top(10); row_box.set_margin_bottom(10); row_box.set_margin_start(15); row_box.set_margin_end(15)
+            
+            img = Gtk.Image.new_from_icon_name(icon); img.set_pixel_size(28)
             
             txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
             txt.set_hexpand(True)
@@ -304,7 +351,17 @@ class MainWindow(Gtk.ApplicationWindow):
             row_box.append(img); row_box.append(txt); row_box.append(arr)
             row.set_child(row_box)
             row.connect("clicked", callback)
-            if color_class: row.add_css_class(color_class)
+            
+            # Sadece kritik olanlara renk ver (Destructive gibi)
+            if action_style == "destructive-action":
+                row.add_css_class("destructive-action")
+                row.remove_css_class("list-button") # Kırmızı olacağı için list stilini kaldır
+            elif action_style == "suggested-action":
+                # Mavi vurgu
+                 l1.add_css_class("accent") # Veya custom bir stil
+                 # Row'un kendisine suggested-action verirsek çok cırtlak mavi buton olur
+                 # Bunun yerine ikon rengiyle vs. oynayabiliriz ama şimdilik list-button kalsın.
+
             return row
             
         self.btn_closed = add_action_row("speedometer-symbolic", Translator.tr("expert_btn_proprietary"), 
@@ -321,21 +378,43 @@ class MainWindow(Gtk.ApplicationWindow):
         box.append(act_group)
         
         # Araçlar
+        # Header + Info
+        tool_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         tool_lbl = Gtk.Label(label=Translator.tr("expert_tools_title"), xalign=0); tool_lbl.add_css_class("heading")
-        box.append(tool_lbl)
+        tool_header.append(tool_lbl)
+        
+        btn_info_tool = Gtk.Button(icon_name="dialog-information-symbolic")
+        btn_info_tool.add_css_class("flat")
+        btn_info_tool.connect("clicked", self._show_expert_info)
+        tool_header.append(btn_info_tool)
+        
+        box.append(tool_header)
         
         tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         tools.set_homogeneous(True)
         
+        
         btn_repo = Gtk.Button(label="Repo Fix"); btn_repo.connect("clicked", self.on_optimize_clicked)
-        btn_scan = Gtk.Button(label="Yeniden Tara"); btn_scan.connect("clicked", self.on_scan_clicked)
+        # btn_scan artık yukarıda (header) ikon olarak var
         btn_test = Gtk.Button(label="Test (glxgears)"); btn_test.connect("clicked", self.on_test_clicked)
         
-        tools.append(btn_repo); tools.append(btn_scan); tools.append(btn_test)
+        tools.append(btn_repo); tools.append(btn_test)
         box.append(tools)
         
         scroll.set_child(box)
         return scroll
+
+    def _show_expert_info(self, btn):
+        title = "Gelişmiş Araçlar Hakkında"
+        text = ("Bu menüdeki araçlar sistem bakımını sağlar:\n\n"
+                "• Repo Fix (Optimizasyon): İndirme hızını artırmak için 'sources.list' dosyanızı konumunuza en yakın sunucuya yönlendirir ve eksik Ubuntu depolarını (universe/restricted) açar.\n\n"
+                "• Yeniden Tara: Donanım değişikliklerini algılamak için sistem taramasını tekrarlar.\n\n"
+                "• Test: Ekran kartınızın çalışıp çalışmadığını anlamak için basit bir 3D çark animasyonu (glxgears) açar.")
+        
+        d = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=title)
+        d.props.secondary_text = text
+        d.connect("response", lambda w, r: w.destroy())
+        d.present()
 
     def on_custom_install_clicked(self, btn):
         self.stack.set_visible_child_name("expert")
@@ -466,10 +545,6 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_version_changed(self, combo):
         self.selected_version = combo.get_active_id()
 
-    def on_scan_clicked(self, w):
-        self.gpu_info = self.detector.detect(force_refresh=True)
-        self._update_ui_state()
-
     def on_optimize_clicked(self, w):
         self.start_transaction("Repo Optimizasyonu (Konum + PPA)...")
         self.target_action = "optimize_repos"
@@ -487,7 +562,6 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_nouveau_clicked(self, w): self.validate_and_start("remove", "Nouveau Dönüşü (Reset)...")
     def on_open_clicked(self, w): self.validate_and_start("install_nvidia_open", f"Open Kernel v{self.selected_version}...")
     def on_closed_clicked(self, w): self.validate_and_start("install_nvidia_closed", f"Proprietary v{self.selected_version}...")
-    def on_test_clicked(self, w): subprocess.Popen(["glxgears"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     def on_save_log_clicked(self, w):
         d = Gtk.FileChooserDialog(title="Log Kaydet", parent=self, action=Gtk.FileChooserAction.SAVE)
@@ -502,10 +576,38 @@ class MainWindow(Gtk.ApplicationWindow):
             dlg.destroy()
         d.connect("response", resp); d.present()
 
+
+    def ask_eula_confirmation(self):
+        """Kullanıcıdan modla EULA onayı alır (Synchronous/Blocking mantığıyla çalışır)."""
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.WARNING, buttons=Gtk.ButtonsType.NONE, text=Translator.tr("eula_title"))
+        dialog.props.secondary_text = Translator.tr("eula_desc")
+        
+        btn_ok = dialog.add_button(Translator.tr("btn_accept"), Gtk.ResponseType.OK)
+        btn_ok.add_css_class("suggested-action")
+        dialog.add_button(Translator.tr("btn_decline"), Gtk.ResponseType.CANCEL)
+        
+        response = None
+        def on_response(d, r):
+            nonlocal response
+            response = r
+            d.destroy()
+            
+        dialog.connect("response", on_response)
+        dialog.present()
+        
+        # Basit bir event loop ile bekle
+        while response is None:
+            GLib.MainContext.default().iteration(True)
+            
+        return response == Gtk.ResponseType.OK
+
     def validate_and_start(self, action, desc):
         if not self.check_network() and action != "remove":
             self.show_error_dialog("İnternet Yok", "Sürücü indirmek için internet bağlantısı gereklidir.")
             return
+
+        if action == "install_nvidia_closed":
+             if not self.ask_eula_confirmation(): return
 
         if "install" in action or action == "remove":
             if shutil.which("timeshift"):
@@ -558,12 +660,20 @@ class MainWindow(Gtk.ApplicationWindow):
 
         if self.target_action == "optimize_repos":
             self.append_log("Konum algılanıyor ve sunucular optimize ediliyor...")
-            self.repo_manager.optimize_sources()
+            s1 = self.repo_manager.optimize_sources()
+            if not s1: self.append_log("UYARI: Kaynak optimizasyonu başarısız.")
+
             self.append_log("Resmi Ubuntu depoları (Restricted/Multiverse) açılıyor...")
-            self.repo_manager.ensure_standard_repos()
+            s2 = self.repo_manager.ensure_standard_repos()
+            if not s2: self.append_log("UYARI: Repo ekleme başarısız.")
+            
             self.append_log("Paket listesi güncelleniyor (apt update)...")
-            subprocess.run(["pkexec", "driver-pilot-root-task", "apt-get update"])
-            GLib.idle_add(self._on_finished, True)
+            s3 = self.repo_manager.update_repos()
+            if not s3: self.append_log("UYARI: Paket listesi güncellenemedi.")
+            
+            # Kısmi başarı kabul edilebilir mi? Evet, ama kullanıcıya bilgi verelim
+            final_success = s1 or s2 or s3
+            GLib.idle_add(self._on_finished, final_success)
             return
 
         self.append_log("Asıl işlem başlatılıyor...")
@@ -598,7 +708,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.spinner.stop()
         self.btn_done.set_visible(True) # Dönüş butonunu göster
         
-        self.on_scan_clicked(None)
+        self.spinner.stop()
+        self.btn_done.set_visible(True) # Dönüş butonunu göster
+        
+        # self.on_scan_clicked(None) # Gereksiz popup açıyor, bunu kaldırdık.
+        # Kullanıcı zaten elle refresh yapabilir.
         
         if success:
              self.progress_bar.set_text("Tamamlandı")
@@ -669,7 +783,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def load_css(self):
         p = Gtk.CssProvider()
         path = os.path.join(os.path.dirname(__file__), "assets", "style.css")
-        if not os.path.exists(path): path = "/opt/driver-pilot/src/ui/assets/style.css"
+        if not os.path.exists(path): path = "/opt/ro-control/src/ui/assets/style.css"
         if os.path.exists(path):
             p.load_from_path(path)
             if IsAdwaita or Gtk.get_major_version() == 4:
@@ -680,7 +794,7 @@ class MainWindow(Gtk.ApplicationWindow):
     # --- Helpers ---
     def get_logo_image(self):
         dev_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "logo.png") 
-        prod_path = "/opt/driver-pilot/data/logo.png"
+        prod_path = "/opt/ro-control/data/logo.png"
         if os.path.exists(dev_path): return Gtk.Image.new_from_file(dev_path)
         if os.path.exists(prod_path): return Gtk.Image.new_from_file(prod_path)
         return Gtk.Image.new_from_icon_name("video-display")
@@ -693,21 +807,54 @@ class MainWindow(Gtk.ApplicationWindow):
         center_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10); center_box.set_halign(Gtk.Align.CENTER)
         icon = self.get_logo_image(); icon.set_pixel_size(80); center_box.append(icon)
         lbl_title = Gtk.Label(label=AppConfig.PRETTY_NAME); lbl_title.add_css_class("title-1"); center_box.append(lbl_title)
-        lbl_ver = Gtk.Label(label=f"v{AppConfig.VERSION}"); lbl_ver.add_css_class("heading"); center_box.append(lbl_ver)
+        
+        # Version Box (Label + Update Check)
+        ver_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        lbl_ver = Gtk.Label(label=f"v{AppConfig.VERSION}"); lbl_ver.add_css_class("heading")
+        ver_box.append(lbl_ver)
+        
+        # Küçük güncelleme butonu (Eğer repo varsa)
+        if hasattr(AppConfig, "GITHUB_REPO") and AppConfig.GITHUB_REPO:
+             btn_upd = Gtk.Button(icon_name="system-software-update-symbolic")
+             btn_upd.add_css_class("flat"); btn_upd.set_tooltip_text("Güncellemeleri Kontrol Et")
+             btn_upd.connect("clicked", lambda x: self.on_check_update_clicked(x, lbl_ver))
+             ver_box.append(btn_upd)
+             
+        center_box.append(ver_box)
         main_vbox.append(center_box)
         scroll = Gtk.ScrolledWindow(); scroll.set_min_content_height(250); scroll.set_vexpand(True); changelog_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10); changelog_box.set_margin_start(10)
         
         # Basit Changelog (Hatamı önlemek için burada yeniden yazıyorum)
+        # Basit Changelog (Hatamı önlemek için burada yeniden yazıyorum)
         import re
-        parts = re.split(r'(v\d+\.\d+\.\d+ Yenilikleri:)', AppConfig.CHANGELOG.strip())
+        # Regex: vX.X.X (veya vX.X.X Alpha/Beta) Yenilikleri:
+        # Gruplama parantezi önemli ()
+        parts = re.split(r'(v\d+\.\d+\.\d+(?: \(.*\))? Yenilikleri:)', AppConfig.CHANGELOG.strip())
+        
         current_header = None
         for part in parts:
              part = part.strip()
              if not part: continue
-             if re.match(r'v\d+\.\d+\.\d+ Yenilikleri:', part): current_header = part.replace(" Yenilikleri:", "")
+             
+             # Başlık mı?
+             if "Yenilikleri:" in part: 
+                 current_header = part.replace(" Yenilikleri:", "")
              elif current_header:
-                  e = Gtk.Expander(label=current_header); l = Gtk.Label(label=part); l.set_wrap(True); l.set_xalign(0); e.set_child(l); changelog_box.append(e)
-                  if current_header == f"v{AppConfig.VERSION}": e.set_expanded(True)
+                  e = Gtk.Expander(label=current_header)
+                  # Label padding
+                  l = Gtk.Label(label=part)
+                  l.set_wrap(True)
+                  l.set_xalign(0)
+                  l.set_margin_start(10); l.set_margin_bottom(10)
+                  e.set_child(l)
+                  
+                  changelog_box.append(e)
+                  
+                  # En son sürümü varsayılan olarak açık yap
+                  # (Basit kontrol: Versiyon numarasını içeriyorsa)
+                  if AppConfig.VERSION in current_header:
+                       e.set_expanded(True)
+                  
                   current_header = None
         scroll.set_child(changelog_box); main_vbox.append(scroll)
         
@@ -724,6 +871,50 @@ class MainWindow(Gtk.ApplicationWindow):
         main_vbox.append(btn_contain)
         
         win.set_child(main_vbox); win.present()
+
+    def on_check_update_clicked(self, btn, lbl_ver):
+        btn.set_sensitive(False)
+        lbl_ver.set_text(f"v{AppConfig.VERSION} (Kontrol ediliyor...)")
+        
+        def check_thread():
+            has_update, new_ver, url, notes = self.updater.check_for_updates()
+            GLib.idle_add(self._on_update_checked, btn, lbl_ver, has_update, new_ver, url, notes)
+            
+        threading.Thread(target=check_thread, daemon=True).start()
+        
+    def _on_update_checked(self, btn, lbl_ver, has_update, new_ver, url, notes):
+        btn.set_sensitive(True)
+        if not has_update:
+            lbl_ver.set_text(f"v{AppConfig.VERSION} (Güncel)")
+            # Basit bir bilgi mesajı
+            d = Gtk.MessageDialog(transient_for=self.get_root(), modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text="Sistem Güncel")
+            d.props.secondary_text = f"Mevcut sürüm (v{AppConfig.VERSION}) en son sürüm."
+            d.connect("response", lambda w, r: w.destroy())
+            d.present()
+        else:
+            lbl_ver.set_text(f"v{AppConfig.VERSION} -> v{new_ver}")
+            # Güncelleme Onay Diyaloğu
+            d = Gtk.MessageDialog(transient_for=self.get_root(), modal=True, message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.YES_NO, text="Yeni Güncelleme Mevcut")
+            d.props.secondary_text = f"Yeni sürüm: v{new_ver}\n\nİndirip kurmak ister misiniz?\n\nNotlar:\n{notes[:200]}..."
+            
+            def resp(dlg, r):
+                dlg.destroy()
+                if r == Gtk.ResponseType.YES:
+                    self._start_update_process(url)
+            d.connect("response", resp)
+            d.present()
+
+    def _start_update_process(self, url):
+        # UI Progress Moduna Geçsin
+        self.start_transaction("Uygulama Güncelleniyor...")
+        
+        def run_update():
+            success = self.updater.download_and_install(url, lambda msg: self.append_log(msg))
+            GLib.idle_add(self._on_finished, success)
+            if success:
+                 GLib.idle_add(self.append_log, "Güncelleme tamamlandı! Lütfen uygulamayı yeniden başlatın.")
+                 
+        threading.Thread(target=run_update, daemon=True).start()
 
     def on_express_install_clicked(self, btn):
         # 1. Sürücü Tipi Seçimi (Open vs Closed)
@@ -771,6 +962,9 @@ class MainWindow(Gtk.ApplicationWindow):
         is_amd = "AMD" in self.gpu_info.get("vendor", "")
         best_ver = self.available_versions[0] if self.available_versions else "Auto"
         
+        # Dialog Response (Kapat butonu için)
+        dialog.connect("response", lambda d, r: d.destroy())
+
         def on_open_clicked(x):
             dialog.destroy()
             if is_amd:
@@ -786,7 +980,6 @@ class MainWindow(Gtk.ApplicationWindow):
             if is_amd:
                 # AMD -> Closed (Pro) warning
                 self.show_error_dialog(Translator.tr("err_amd_pro_title"), Translator.tr("err_amd_pro_desc"))
-                self.validate_and_start("install_amd_open", Translator.tr("msg_trans_start"))
             else:
                 # NVIDIA -> Closed
                 self.selected_version = best_ver
@@ -796,6 +989,71 @@ class MainWindow(Gtk.ApplicationWindow):
         btn_closed.connect("clicked", on_closed_clicked)
         
         dialog.present()
+
+    def on_test_clicked(self, w):
+        if shutil.which("glxgears"):
+            # Varsa direkt çalıştır
+            try:
+                subprocess.Popen(["glxgears"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                d = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text="Test Başlatıldı")
+                d.props.secondary_text = "3D çarklar penceresi açıldıysa ekran kartınız çalışıyor demektir."
+                d.connect("response", lambda w,r: w.destroy())
+                d.present()
+            except Exception as e:
+                self.show_error_dialog("Hata", f"Test başlatılamadı: {e}")
+        else:
+            # Yoksa otomatik kur ve çalıştır
+            self.start_transaction("Test Aracı Kuruluyor (mesa-utils)...")
+            
+            def install_and_run():
+                # Kurulum (mesa-utils)
+                cmd = 'pkexec ro-control-root-task "apt-get install -y mesa-utils"'
+                from src.utils.command_runner import CommandRunner
+                runner = CommandRunner()
+                code, out, err = runner.run_full(cmd)
+                
+                if code == 0:
+                    GLib.idle_add(self.append_log, "Kurulum başarılı. Test başlatılıyor...")
+                    GLib.idle_add(self._on_finished, True)
+                    time.sleep(0.5)
+                    try:
+                        subprocess.Popen(["glxgears"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    except: pass
+                else:
+                    GLib.idle_add(self.append_log, f"Kurulum başarısız: {err}")
+                    GLib.idle_add(self._on_finished, False)
+
+            threading.Thread(target=install_and_run, daemon=True).start()
+
+    def on_scan_clicked(self, w):
+        self.gpu_info = self.detector.detect(force_refresh=True)
+        self._update_ui_state()
+        
+        # Kullanıcıya başarı mesajı
+        d = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text="Tarama Tamamlandı")
+        d.props.secondary_text = f"Donanım değişiklikleri için sistem yeniden tarandı.\nTespit edilen: {self.gpu_info.get('vendor')} {self.gpu_info.get('model')}"
+        d.connect("response", lambda w,r: w.destroy())
+        d.present()
+
+    def _on_window_resize(self, *args):
+        """Pencere boyutuna göre responsive sınıfları uygular."""
+        width = self.get_default_size().width
+        # Eğer pencere maximize edilmişse veya manuel büyütülmüşse
+        # get_width() daha doğru olabilir ama GTK4'te surface üzerinden alınır.
+        
+        # Basit yaklaşım: Varsayılan boyutu kontrol et, eğer küçükse compact yap.
+        # Daha doğrusu: allocation width
+        alloc_width = self.get_width()
+        
+        if alloc_width < 800:
+            self.add_css_class("compact")
+            self.remove_css_class("wide")
+        elif alloc_width > 1200:
+            self.add_css_class("wide")
+            self.remove_css_class("compact")
+        else:
+            self.remove_css_class("compact")
+            self.remove_css_class("wide")
 
     def show_error_dialog(self, title, message):
         dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.OK, text=title)
@@ -832,7 +1090,7 @@ class MainWindow(Gtk.ApplicationWindow):
 # Launcher
 class GPUManagerApp(BaseApp):
     def __init__(self):
-        super().__init__(application_id="com.sopwith.driverpilot", flags=Gio.ApplicationFlags.NON_UNIQUE)
+        super().__init__(application_id="com.sopwith.rocontrol", flags=Gio.ApplicationFlags.NON_UNIQUE)
         self.window = None
 
     def do_activate(self):

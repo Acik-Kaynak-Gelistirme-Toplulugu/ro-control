@@ -1,39 +1,109 @@
 /* Adwaita (GNOME) teması üzerine eklemeler */
 
+/* Global Responsive Layout Helpers */
 .title-1 {
   font-weight: 800;
-  font-size: 24px;
+  font-size: 24px; /* Standart */
   color: #3584e4; /* GNOME Mavisi */
 }
 
-.heading {
-  font-size: 16px;
-  color: alpha(currentColor, 0.7);
+
+/* Responsive Classes (Managed by Python) */
+.wide .title-1 {
+  font-size: 32px;
 }
 
+.compact .title-1 {
+  font-size: 20px;
+}
+
+.compact .heading {
+  font-size: 14px;
+}
+
+.compact .card-view {
+  padding: 10px;
+  margin: 2px;
+}
+
+
+.heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: alpha(currentColor, 0.9);
+  margin-bottom: 5px;
+}
+
+.dim-label {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+/* Kart Görünümü (Frame yerine daha modern) */
+.card-view {
+    background-color: alpha(currentColor, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 5px;
+    transition: background-color 0.2s;
+}
+
+.card-view:hover {
+    background-color: alpha(currentColor, 0.08);
+}
+
+
+/* Butonlar için daha doğal ve sisteme entegre stiller */
+
 .suggested-action {
+  /* GNOME 'suggested-action' class'ı zaten mavidir, biz sadece boyutu ayarlayalım */
   font-weight: bold;
   padding: 10px 20px;
+  border-radius: 8px;
 }
 
 .destructive-action {
-  background-color: #e01b24;
-  color: white;
+  /* GNOME 'destructive-action' class'ı zaten kırmızıdır. */
   font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 8px;
+  /* Hardcoded renk yerine sistem temasını kullanır */
 }
+
+/* Liste elemanı gibi görünen butonlar için */
+.list-button {
+  background-color: transparent;
+  border: 1px solid alpha(currentColor, 0.1);
+  border-radius: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 8px;
+  transition: all 0.2s;
+}
+
+.list-button:hover {
+  background-color: alpha(currentColor, 0.05);
+  border-color: alpha(currentColor, 0.3);
+}
+
+.list-button:active {
+  background-color: alpha(currentColor, 0.1);
+}
+
 
 frame {
   border-radius: 12px;
-  background-color: alpha(currentColor, 0.05);
+  background-color: alpha(currentColor, 0.03); /* Hafifletilmiş */
+  border: 1px solid alpha(currentColor, 0.1);
+}
+
+/* Log paneli */
+textview {
+    font-family: 'Monospace';
+    font-size: 13px;
 }
 
 /* Performans Barları */
-.p-green progressbar > trough > progress {
-  background-color: #2ec27e;
-}
-.p-yellow progressbar > trough > progress {
-  background-color: #f5c211;
-}
-.p-red progressbar > trough > progress {
-  background-color: #e01b24;
-}
+.p-green progressbar > trough > progress { background-color: #2ec27e; }
+.p-yellow progressbar > trough > progress { background-color: #f5c211; }
+.p-red progressbar > trough > progress { background-color: #e01b24; }

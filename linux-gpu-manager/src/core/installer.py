@@ -97,7 +97,7 @@ class DriverInstaller:
         commands.extend(self._finalize_installation_chain())
         return self._execute_transaction_bulk(commands, "NVIDIA Açık Kaynak Kurulumu")
 
-    def create_timeshift_snapshot(self, comment="Driver Pilot Otomatik Yedek"):
+    def create_timeshift_snapshot(self, comment="ro-Control Otomatik Yedek"):
         """Timeshift ile sistem yedeği oluşturur."""
         import shutil
         if not shutil.which("timeshift"):
@@ -118,14 +118,29 @@ class DriverInstaller:
         
         # Derin Temizlik: Artık konfigürasyon dosyalarını sil
         if deep_clean:
+            # 1. Kritik Configler
             commands.append("rm -f /etc/X11/xorg.conf")
             commands.append("rm -f /etc/modprobe.d/nvidia*")
             commands.append("rm -f /etc/modules-load.d/nvidia*")
+            
+            # 2. X11 Yapılandırma Klasörü (xorg.conf.d içindeki nvidia kalıntıları)
+            commands.append("rm -f /etc/X11/xorg.conf.d/*nvidia*")
+            commands.append("rm -f /usr/share/X11/xorg.conf.d/*nvidia*")
+            
+            # 3. Vulkan Katmanları (Bazen sorun çıkarır)
+            commands.append("rm -f /usr/share/vulkan/icd.d/nvidia_icd.json")
+            commands.append("rm -f /etc/vulkan/icd.d/nvidia_icd.json")
+            
+            # 4. Alternatifler (update-alternatives)
+            # Bu komut sistemdeki 'glx' sembolik linklerini sıfırlar
+            if shutil.which("update-alternatives"):
+                 commands.append("update-alternatives --remove-all nvidia || true")
 
         if self.pkg_manager == "apt":
-            commands.append("apt-get remove --purge -y '^nvidia-.*'")
+            # DKMS modüllerini de hedef al (Kernel içinde kalanlar)
+            commands.append("apt-get remove --purge -y '^nvidia-.*' '^libnvidia-.*' '^xserver-xorg-video-nvidia.*'") 
             commands.append("apt-get autoremove -y")
-            commands.append("apt-get install -y xserver-xorg-video-nouveau")
+            commands.append("apt-get install -y xserver-xorg-video-nouveau") # Nouveau'yu garantile
         elif self.pkg_manager == "dnf":
             commands.append("dnf remove -y '*nvidia*'")
         elif self.pkg_manager == "pacman":
@@ -232,7 +247,7 @@ class DriverInstaller:
         # Sadece komutu birleştirip gönderiyoruz.
         
         # Çift tırnak kaçışlarına dikkat ederek pkexec çalıştır
-        final_cmd = f'pkexec driver-pilot-root-task "{full_command}"'
+        final_cmd = f'pkexec ro-control-root-task "{full_command}"'
         
         self.log(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] --- İŞLEM BAŞLATILIYOR: {task_name} ---")
         

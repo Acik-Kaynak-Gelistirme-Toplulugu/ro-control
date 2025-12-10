@@ -83,19 +83,19 @@ def build_deb(target_arch="amd64"):
     with open(launcher_path, "w") as f:
         f.write("#!/bin/bash\n")
         f.write(f"cd /opt/{app_name}\n")
-        f.write("echo 'Launcher: Dizine girildi, python başlatılıyor...' > /tmp/driver-pilot-debug.log\n")
-        f.write(f"/usr/bin/python3 -u -m src.main \"$@\" >> /tmp/driver-pilot-debug.log 2>&1\n")
+        f.write(f"echo 'Launcher: Dizine girildi, python başlatılıyor...' > /tmp/{app_name}-debug.log\n")
+        f.write(f"/usr/bin/python3 -u -m src.main \"$@\" >> /tmp/{app_name}-debug.log 2>&1\n")
     os.chmod(launcher_path, 0o755)
 
     # Root Task Wrapper (Yeni Eklenen)
-    wrapper_src = os.path.join(data_source, "driver-pilot-root-task")
-    wrapper_dst = os.path.join(bin_dir, "driver-pilot-root-task")
+    wrapper_src = os.path.join(data_source, "ro-control-root-task")
+    wrapper_dst = os.path.join(bin_dir, "ro-control-root-task")
     if os.path.exists(wrapper_src):
         shutil.copy(wrapper_src, wrapper_dst)
         os.chmod(wrapper_dst, 0o755)
 
     # Desktop & Icon
-    shutil.copy(os.path.join(data_source, "driver-pilot.desktop"), os.path.join(desktop_dir, f"{app_name}.desktop"))
+    shutil.copy(os.path.join(data_source, "ro-control.desktop"), os.path.join(desktop_dir, f"{app_name}.desktop"))
     # Eski isimle varsa diye clean install logic'i postinst'te, burada sadece yeni isim.
     
     # Logo
@@ -104,7 +104,7 @@ def build_deb(target_arch="amd64"):
          shutil.copy(logo_src, os.path.join(icon_dir, f"{app_name}.png"))
     
     # AppStream Metadata
-    metainfo_src = os.path.join(data_source, "driver-pilot.metainfo.xml")
+    metainfo_src = os.path.join(data_source, "ro-control.metainfo.xml")
     if os.path.exists(metainfo_src):
         shutil.copy(metainfo_src, os.path.join(metainfo_dir, f"{app_name}.metainfo.xml"))
     

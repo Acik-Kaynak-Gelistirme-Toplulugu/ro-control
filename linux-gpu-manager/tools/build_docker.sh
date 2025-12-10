@@ -4,7 +4,7 @@ set -e
 # Script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-IMAGE_NAME="driver-pilot-builder"
+IMAGE_NAME="ro-control-builder"
 
 # Usage check
 if [ "$1" == "" ]; then

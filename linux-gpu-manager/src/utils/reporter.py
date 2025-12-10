@@ -100,8 +100,8 @@ LOG KAYITLARI:
     def send_feedback():
         """Genel geri bildirim için mail istemcisini açar."""
         try:
-            subject = "Driver Pilot Feedback"
-            body = "\n\n\n--\nDriver Pilot v{} - Linux Driver Manager".format(AppConfig.VERSION)
+            subject = "ro-Control Feedback"
+            body = "\n\n\n--\nro-Control v{} - Linux Driver Manager".format(AppConfig.VERSION)
             
             query = urllib.parse.urlencode({"subject": subject, "body": body}, quote_via=urllib.parse.quote)
             link = f"mailto:{DEVELOPER_EMAIL}?{query}"

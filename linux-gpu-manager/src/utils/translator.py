@@ -16,7 +16,7 @@ class Translator:
             "tab_perf": "Performans",
             
             "express_title": "Hızlı Kurulum (Önerilen)",
-            "express_desc_nvidia": "En güncel kararlı NVIDIA v{} sürücüsünü otomatik kurar.",
+            "express_desc_nvidia": "En güncel kararlı NVIDIA (v{}) sürücüsünü otomatik kurar.",
             "express_desc_amd": "En güncel AMD Mesa sürücülerini otomatik kurar.",
             "custom_title": "Özel Kurulum (Uzman)",
             "custom_desc": "Sürüm, kernel tipi ve temizlik ayarlarını manuel yapılandırın.",
@@ -63,6 +63,7 @@ class Translator:
             "lbl_cpu": "İşlemci (CPU):",
             "lbl_ram": "Bellek (RAM):",
             "lbl_gpu": "Ekran Kartı:",
+            "lbl_display": "Görüntü Sunucusu:",
             
             "dash_gpu_title": "Canlı GPU Durumu",
             "dash_sys_title": "Canlı Sistem Kullanımı",
@@ -92,9 +93,16 @@ class Translator:
             "type_open": "Açık Kaynak (Open Source)",
             "type_open_desc": "Topluluk destekli, kararlı.",
             "type_closed": "Kapalı Kaynak (Proprietary)",
-            "type_closed_desc": "Üretici resmi sürücüsü,\nyüksek oyun performansı.",
+            "type_closed_desc": "Üretici resmi sürücüsü,\nyüksek oyun performansı.\n(EULA onayı gerektirir)",
             "err_amd_pro_title": "AMD Proprietary",
             "err_amd_pro_desc": "AMD için en iyi deneyimi Açık Kaynak sunar. Açık Kaynak (Mesa) kurulacak.",
+            
+            # --- EULA ---
+            "eula_title": "Lisans Sözleşmesi (EULA)",
+            "eula_desc": "NVIDIA Kapalı Kaynak sürücüsünü kurarak NVIDIA Son Kullanıcı Lisans Sözleşmesi'ni (EULA) kabul etmiş sayılırsınız.\n\nBu sürücü açık kaynak değildir ve NVIDIA tarafından sağlanır.",
+            "btn_accept": "Kabul Ediyorum ve Kur",
+            "btn_decline": "Vazgeç",
+
             # --- Theme ---
             "tooltip_theme_system": "Tema: Sistem",
             "tooltip_theme_dark": "Tema: Koyu",
@@ -156,6 +164,7 @@ class Translator:
             "lbl_cpu": "Processor (CPU):",
             "lbl_ram": "Memory (RAM):",
             "lbl_gpu": "Graphics Card:",
+            "lbl_display": "Display Server:",
             
             "dash_gpu_title": "Live GPU Status",
             "dash_sys_title": "Live System Usage",
@@ -185,9 +194,15 @@ class Translator:
             "type_open": "Open Source",
             "type_open_desc": "Community supported, stable.",
             "type_closed": "Proprietary",
-            "type_closed_desc": "Manufacturer official driver,\nhigh gaming performance.",
+            "type_closed_desc": "Manufacturer official driver,\nhigh gaming performance.\n(Requires EULA acceptance)",
             "err_amd_pro_title": "AMD Proprietary",
             "err_amd_pro_desc": "Open Source offers the best experience for AMD. Installing Open Source (Mesa).",
+            
+            # --- EULA ---
+            "eula_title": "License Agreement (EULA)",
+            "eula_desc": "By installing the NVIDIA Proprietary driver, you agree to the NVIDIA End User License Agreement (EULA).\n\nThis driver is not open source and is provided by NVIDIA.",
+            "btn_accept": "Accept and Install",
+            "btn_decline": "Cancel",
             
             # --- Theme ---
             "tooltip_theme_system": "Theme: System",

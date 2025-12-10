@@ -46,7 +46,7 @@ def setup_logger():
         logger.addHandler(console_handler)
 
     logging.info("="*40)
-    logging.info("Display Driver App Başlatıldı")
+    logging.info("ro-Control Başlatıldı")
     logging.info(f"Log Dosyası: {log_file}")
     logging.info("="*40)
 

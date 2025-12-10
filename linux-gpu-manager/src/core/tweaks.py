@@ -1,11 +1,14 @@
 import shutil
-import subprocess
-import re
-import platform
+import logging
+import multiprocessing
+from src.utils.command_runner import CommandRunner
 
 class SystemTweaks:
     def __init__(self):
-        self.is_nvidia = False # Tespit edilince güncellenir
+        self.is_nvidia = False 
+        self.logger = logging.getLogger("SystemTweaks")
+        self.runner = CommandRunner()
+        self.nvidia_smi_path = shutil.which("nvidia-smi")
 
     def get_gpu_stats(self):
         """
@@ -13,24 +16,21 @@ class SystemTweaks:
         """
         stats = {"temp": 0, "load": 0, "mem_used": 0, "mem_total": 0}
         
-        if shutil.which("nvidia-smi"):
+        if self.nvidia_smi_path:
             try:
-                res = subprocess.run(
-                    ["nvidia-smi", "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"],
-                    capture_output=True, text=True
-                )
-                if res.returncode == 0:
-                    parts = res.stdout.strip().split(', ')
+                # CommandRunner ile çalıştır
+                res = self.runner.run(f"{self.nvidia_smi_path} --query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits")
+                if res:
+                    parts = res.strip().split(', ')
                     if len(parts) >= 4:
                         stats["temp"] = int(parts[0])
                         stats["load"] = int(parts[1])
                         stats["mem_used"] = int(parts[2])
                         stats["mem_total"] = int(parts[3])
                         return stats
-            except: pass
+            except Exception as e:
+                self.logger.error(f"GPU Stats okunamadı: {e}")
         
-        # Eğer NVIDIA bulunamazsa boş döner (Veya mock dönebiliriz)
-        # Önceki fallback mantığını get_system_stats'a taşıyoruz.
         return stats
 
     def get_system_stats(self):
@@ -42,10 +42,6 @@ class SystemTweaks:
         try:
             # CPU Load (Basit ortalama)
             with open("/proc/loadavg", "r") as f:
-                # 1 dakikalık ortalama yük / Core sayısı tahmini (Basitleştirilmiş)
-                # Tam yüzde için psutil gerekir ama stdlib kullanıyoruz
-                # multiprocessing.cpu_count() ile core sayısını alıp bölebiliriz
-                import multiprocessing
                 load_avg = float(f.read().split()[0])
                 cores = multiprocessing.cpu_count()
                 percent = (load_avg / cores) * 100
@@ -75,7 +71,8 @@ class SystemTweaks:
             except:
                 sys_stats["cpu_temp"] = 0 # Okunamazsa 0
                 
-        except Exception:
+        except Exception as e:
+            self.logger.error(f"Sistem istatistikleri alınırken hata: {e}")
             pass
             
         return sys_stats
@@ -86,8 +83,18 @@ class SystemTweaks:
 
     def install_gamemode(self):
         """GameMode paketini kurar."""
-        cmd = ["pkexec", "apt-get", "install", "-y", "gamemode"]
-        return subprocess.run(cmd).returncode == 0
+        self.logger.info("GameMode kurulumu başlatılıyor...")
+        # dpkg kilidini önlemek ve temiz kurulum için wrapper kullanıyoruz
+        cmd = 'pkexec ro-control-root-task "apt-get install -y gamemode"'
+        code, out, err = self.runner.run_full(cmd)
+        
+        if code != 0:
+            msg = f"GameMode kurulum başarısız. Code: {code}, Err: {err}"
+            self.logger.error(msg)
+            return False, msg
+        
+        self.logger.info("GameMode başarıyla kuruldu.")
+        return True, "GameMode başarıyla kuruldu."
 
     def is_prime_supported(self):
         """Sistemin NVIDIA Prime (Hybrid Graphics) destekleyip desteklemediğini kontrol eder."""
@@ -97,24 +104,43 @@ class SystemTweaks:
         """Mevcut Hybrid Graphics modunu döndürür (nvidia/intel/on-demand)."""
         if not shutil.which("prime-select"):
             return "unknown"
-        res = subprocess.run(["prime-select", "query"], capture_output=True, text=True)
-        return res.stdout.strip()
+        
+        res = self.runner.run("prime-select query")
+        if res:
+            return res.strip()
+        return "unknown"
 
     def set_prime_profile(self, profile):
         """Hybrid modunu değiştirir (Reboot gerekir)."""
-        # profile: nvidia, intel, on-demand
-        cmd = ["pkexec", "prime-select", profile]
-        return subprocess.run(cmd).returncode == 0
+        self.logger.info(f"Prime profili değiştiriliyor: {profile}")
+        cmd = f"pkexec prime-select {profile}"
+        code, out, err = self.runner.run_full(cmd)
+        
+        if code != 0:
+            self.logger.error(f"Prime değişim hatası: {err}")
+            return False
+            
+        return True
 
     def repair_flatpak_permissions(self):
         """Flatpak NVIDIA runtime izinlerini düzeltmeye çalışır."""
-        # Basitçe update ve repair dener
-        cmds = [
-            "flatpak update -y",
-            "flatpak repair"
-        ]
-        success = True
-        for c in cmds:
-            if subprocess.run(f"pkexec {c}", shell=True).returncode != 0:
-                success = False
-        return success
+        self.logger.info("Flatpak onarımı başlatılıyor...")
+        
+        # Komutları && (VE) ile birbirine bağlayarak tek seferde çalıştır
+        # Böylece kullanıcı sadece 1 kere şifre girer.
+        chained_cmd = "flatpak update -y && flatpak repair"
+        
+        self.logger.info(f"Toplu onarım komutu yürütülüyor: {chained_cmd}")
+        # Tek pkexec çağrısı
+        full_cmd = f'pkexec ro-control-root-task "{chained_cmd}"'
+        
+        code, out, err = self.runner.run_full(full_cmd)
+        
+        if code != 0:
+            msg = f"Flatpak onarım hatası: {err}"
+            self.logger.error(msg)
+            return False, msg
+            
+        msg = f"Flatpak onarımı başarıyla tamamlandı.\n\nÇıktı:\n{out[:500]}..." # Çıktının başını göster
+        self.logger.info("Flatpak onarımı başarıyla tamamlandı.")
+        return True, msg

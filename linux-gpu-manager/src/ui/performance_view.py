@@ -1,14 +1,15 @@
 from gi.repository import Gtk, GLib, Gdk
 from src.core.tweaks import SystemTweaks
-from src.core.tweaks import SystemTweaks
 from src.core.detector import SystemDetector
 from src.utils.translator import Translator
 import threading
 import time
+import logging
 
 class PerformanceView(Gtk.Box):
     def __init__(self):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        self.logger = logging.getLogger("PerformanceView")
         self.set_margin_top(20)
         self.set_margin_bottom(20)
         self.set_margin_start(20)
@@ -53,6 +54,10 @@ class PerformanceView(Gtk.Box):
         add_row(2, Translator.tr("lbl_cpu"), self.lbl_val_cpu, "computer-chip-symbolic")
         add_row(3, Translator.tr("lbl_ram"), self.lbl_val_ram, "media-flash-symbolic")
         add_row(4, Translator.tr("lbl_gpu"), self.lbl_val_gpu, "video-display-symbolic")
+        
+        # Display Server
+        self.lbl_val_ds = Gtk.Label(label=info.get("display_server", "Unknown"), xalign=0)
+        add_row(5, Translator.tr("lbl_display"), self.lbl_val_ds, "preferences-desktop-display-symbolic")
 
         frame.set_child(grid)
         self.append(frame)
@@ -69,6 +74,7 @@ class PerformanceView(Gtk.Box):
         self.lbl_val_cpu.set_text(info.get("cpu", "Unknown"))
         self.lbl_val_ram.set_text(info.get("ram", "Unknown"))
         self.lbl_val_gpu.set_text(f"{info.get('vendor')} {info.get('model')}")
+        self.lbl_val_ds.set_text(info.get("display_server", "Unknown"))
         
         # 2. Canlı İstatistikler
         self._update_stats()
@@ -165,19 +171,29 @@ class PerformanceView(Gtk.Box):
         self.combo_prime.append("intel", Translator.tr("mode_save"))
         self.combo_prime.append("on-demand", Translator.tr("mode_balanced"))
         
-        # Mevcut modu seçmeye çalış
-        current = self.tweaks.get_prime_profile()
-        if current in ["nvidia", "intel", "on-demand"]:
-            self.combo_prime.set_active_id(current)
+        # Mevcut modu seçmeye çalış (ve sakla)
+        self.active_mode = self.tweaks.get_prime_profile()
+        if self.active_mode in ["nvidia", "intel", "on-demand"]:
+            self.combo_prime.set_active_id(self.active_mode)
         else:
-            self.combo_prime.set_active_id("on-demand") # Varsayılan
+            self.combo_prime.set_active_id("on-demand")
             
         btn_apply = Gtk.Button(label=Translator.tr("btn_apply"))
         btn_apply.add_css_class("suggested-action")
         btn_apply.connect("clicked", self._on_prime_apply)
         
+        # Yeniden Başlatma Uyarısı (İkon + Tooltip)
+        self.restart_icon = Gtk.Image.new_from_icon_name("system-reboot-symbolic")
+        self.restart_icon.set_tooltip_text("Değişikliklerin uygulanması için yeniden başlatma gerekli!")
+        self.restart_icon.add_css_class("warning") # Veya custom style
+        self.restart_icon.set_visible(False) # Başlangıçta gizli
+
+        # Combo değiştikçe kontrol et
+        self.combo_prime.connect("changed", self._check_restart_needed)
+        
         ctrl_box.append(lbl)
         ctrl_box.append(self.combo_prime)
+        ctrl_box.append(self.restart_icon) # Combo ile Buton arasına ekle
         ctrl_box.append(btn_apply)
         
         main_box.append(ctrl_box)
@@ -209,29 +225,67 @@ class PerformanceView(Gtk.Box):
         grid.set_margin_top(15); grid.set_margin_bottom(15)
         grid.set_margin_start(15); grid.set_margin_end(15)
         
-        # GameMode
+        # --- GameMode ---
+        # Label Box
+        box_gm = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         lbl_game = Gtk.Label(label=Translator.tr("tool_gamemode"))
-        lbl_game.set_halign(Gtk.Align.START)
+        btn_info_gm = Gtk.Button(icon_name="dialog-information-symbolic")
+        btn_info_gm.add_css_class("flat") # Buton çerçevesini gizle
+        btn_info_gm.set_tooltip_text("GameMode Nedir?")
+        btn_info_gm.connect("clicked", lambda x: self._show_info("gamemode"))
+        box_gm.append(lbl_game)
+        box_gm.append(btn_info_gm)
         
         self.switch_game = Gtk.Switch()
         self.switch_game.set_active(self.tweaks.is_gamemode_active())
         self.switch_game.connect("state-set", self._on_gamemode_toggle)
         
-        # Flatpak Fix
+        # --- Flatpak Fix ---
+        box_fp = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         lbl_flat = Gtk.Label(label=Translator.tr("tool_flatpak"))
-        lbl_flat.set_halign(Gtk.Align.START)
+        btn_info_fp = Gtk.Button(icon_name="dialog-information-symbolic")
+        btn_info_fp.add_css_class("flat")
+        btn_info_fp.set_tooltip_text("Ne İşe Yarar?")
+        btn_info_fp.connect("clicked", lambda x: self._show_info("flatpak"))
+        box_fp.append(lbl_flat)
+        box_fp.append(btn_info_fp)
         
         btn_flat = Gtk.Button(label=Translator.tr("btn_repair"))
         btn_flat.connect("clicked", self._on_flatpak_fix)
         
-        grid.attach(lbl_game, 0, 0, 1, 1)
+        grid.attach(box_gm, 0, 0, 1, 1)
         grid.attach(self.switch_game, 1, 0, 1, 1)
         
-        grid.attach(lbl_flat, 0, 1, 1, 1)
+        grid.attach(box_fp, 0, 1, 1, 1)
         grid.attach(btn_flat, 1, 1, 1, 1)
         
         frame.set_child(grid)
         self.append(frame)
+
+    def _show_info(self, key):
+        title = ""
+        text = ""
+        
+        if key == "gamemode":
+            title = "GameMode Hakkında"
+            text = ("Feral GameMode, Linux'ta oyun performansını artırmak için geliştirilmiş bir araçtır.\n\n"
+                    "- İşlemciyi (CPU) 'Performans' moduna alır.\n"
+                    "- Arka plan işlemlerinin önceliğini düşürür.\n"
+                    "- Oyunların daha akıcı (yüksek FPS) çalışmasını sağlar.\n\n"
+                    "Bu anahtarı açtığınızda sisteminize otomatik olarak kurulur ve yapılandırılır.")
+        elif key == "flatpak":
+            title = "Flatpak Onarımı"
+            text = ("Eğer Steam veya oyunları Flatpak üzerinden kurduysanız, bazen sürücüye erişim sorunları yaşanabilir.\n\n"
+                    "Bu araç şunları yapar:\n"
+                    "1. Bozuk izinleri (permission) sıfırlar.\n"
+                    "2. Eksik NVIDIA Runtime kütüphanelerini tamamlar.\n"
+                    "3. Oyunların açılmama sorununu çözer.\n\n"
+                    "Sisteminizde bir sorun yoksa çalıştırmanıza gerek yoktur.")
+
+        dialog = Gtk.MessageDialog(transient_for=self.get_root(), modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=title)
+        dialog.props.secondary_text = text
+        dialog.connect("response", lambda d, r: d.destroy())
+        dialog.present()
 
     def _update_stats(self):
         # UI Thread'i dondurmamak için veriyi arka planda çek
@@ -292,7 +346,7 @@ class PerformanceView(Gtk.Box):
     def _on_prime_apply(self, btn):
         mode = self.combo_prime.get_active_id()
         if mode:
-            print(f"DEBUG: Prime profil uygulanıyor: {mode}")
+            self.logger.info(f"Prime profil uygulanıyor: {mode}")
             # Thread içinde çalıştır
             def run():
                 btn.set_sensitive(False)
@@ -302,37 +356,58 @@ class PerformanceView(Gtk.Box):
                 GLib.idle_add(lambda: btn.set_sensitive(True))
             threading.Thread(target=run, daemon=True).start()
 
+    def _check_restart_needed(self, combo):
+        """Seçilen mod aktif moddan farklıysa uyarı ikonunu göster."""
+        selected = combo.get_active_id()
+        if selected != self.active_mode:
+            self.restart_icon.set_visible(True)
+        else:
+            self.restart_icon.set_visible(False)
+
+
     def _on_gamemode_toggle(self, switch, state):
         if state and not self.tweaks.is_gamemode_active():
              # Kurulum gerekli
-             print("DEBUG: GameMode kuruluyor...")
+             self.logger.info("GameMode kuruluyor...")
              def run():
                  # Switch'i geçici olarak disable et
                  GLib.idle_add(lambda: switch.set_sensitive(False))
-                 success = self.tweaks.install_gamemode()
+                 success, msg = self.tweaks.install_gamemode()
                  GLib.idle_add(lambda: switch.set_sensitive(True))
+                 
                  if not success:
                      # Geri al
                      GLib.idle_add(lambda: switch.set_active(False))
-                     print("DEBUG: GameMode kurulumu başarısız")
+                     GLib.idle_add(lambda: self._show_dialog("Hata", msg, Gtk.MessageType.ERROR))
                  else:
-                     print("DEBUG: GameMode kuruldu")
+                     self.logger.info("GameMode kuruldu")
+                     GLib.idle_add(lambda: self._show_dialog("Başarılı", msg, Gtk.MessageType.INFO))
+                     
              threading.Thread(target=run, daemon=True).start()
         return True
 
     def _on_flatpak_fix(self, btn):
-        print("DEBUG: Flatpak onarılıyor...")
+        self.logger.info("Flatpak onarılıyor...")
         def run():
-            btn.set_sensitive(False)
-            btn.set_label("Onarılıyor...")
-            success = self.tweaks.repair_flatpak_permissions()
+            GLib.idle_add(lambda: btn.set_sensitive(False))
+            GLib.idle_add(lambda: btn.set_label("Onarılıyor..."))
+            
+            success, msg = self.tweaks.repair_flatpak_permissions()
+            
             GLib.idle_add(lambda: btn.set_sensitive(True))
+            GLib.idle_add(lambda: btn.set_label("Onar"))
+            
             if success:
-                GLib.idle_add(lambda: btn.set_label("Tamamlandı"))
-                # Bir süre sonra eski haline dön
-                GLib.timeout_add(3000, lambda: btn.set_label("Onar"))
+                 GLib.idle_add(lambda: self._show_dialog("Onarım Tamamlandı", msg, Gtk.MessageType.INFO))
             else:
-                GLib.idle_add(lambda: btn.set_label("Hata!"))
-                GLib.timeout_add(3000, lambda: btn.set_label("Onar"))
+                 GLib.idle_add(lambda: self._show_dialog("Onarım Hatası", msg, Gtk.MessageType.ERROR))
                 
         threading.Thread(target=run, daemon=True).start()
+
+    def _show_dialog(self, title, text, msg_type):
+        """Yardımcı metod: Thread içinden güvenli dialog gösterir."""
+        if not self.get_root(): return
+        d = Gtk.MessageDialog(transient_for=self.get_root(), modal=True, message_type=msg_type, buttons=Gtk.ButtonsType.OK, text=title)
+        d.props.secondary_text = text
+        d.connect("response", lambda w,r: w.destroy())
+        d.present()

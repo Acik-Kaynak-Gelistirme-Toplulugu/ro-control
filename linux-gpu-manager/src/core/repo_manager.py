@@ -10,6 +10,15 @@ class RepoManager:
     def __init__(self):
         self.logger = logging.getLogger("RepoManager")
         self.runner = CommandRunner()
+        self.log_callback = None
+
+    def set_logger_callback(self, callback):
+        self.log_callback = callback
+
+    def log(self, msg):
+        self.logger.info(msg)
+        if self.log_callback:
+            self.log_callback(msg)
 
     def get_country_code(self):
         """
@@ -34,40 +43,51 @@ class RepoManager:
             
         return "us"
 
-    def optimize_sources(self):
+    def batch_optimize(self):
         """
-        sources.list dosyasını en yakın sunucuya yönlendirir.
+        Tüm repo işlemlerini (Optimize + Standard Repos + Update) tek bir root yetkisiyle yapar.
         """
-        if not shutil.which("apt-get"):
-            return False 
-            
+        if not shutil.which("apt-get"): return False
+        
         cc = self.get_country_code()
-        self.logger.info(f"Konum tespit edildi: {cc.upper()}")
+        self.log(f"Konum tespit edildi: {cc.upper()}")
         
-        # Komutları zincirle
-        cmds = []
-        cmds.append("cp /etc/apt/sources.list /etc/apt/sources.list.backup_dp")
-        cmds.append(rf"sed -i 's/http:\/\/archive.ubuntu.com\/ubuntu/http:\/\/{cc}.archive.ubuntu.com\/ubuntu/g' /etc/apt/sources.list")
+        # Komut Zinciri Oluştur
+        chain = []
         
-        full_cmd = " && ".join(cmds)
-        # Wrapper kullan
-        return self.runner.run(f'pkexec driver-pilot-root-task "{full_cmd}"')
+        # 1. Yedekle
+        chain.append("cp /etc/apt/sources.list /etc/apt/sources.list.backup_dp")
+        
+        # 2. Optimize Et (sed)
+        chain.append(rf"sed -i 's/http:\/\/archive.ubuntu.com\/ubuntu/http:\/\/{cc}.archive.ubuntu.com\/ubuntu/g' /etc/apt/sources.list")
+        
+        # 3. Yazılım Özellikleri Aracı (Eğer yoksa)
+        if not shutil.which("add-apt-repository"):
+             chain.append("apt-get install -y software-properties-common")
+        
+        # 4. Standart Depolar
+        chain.append("add-apt-repository -y main restricted universe multiverse")
+        
+        # 5. Güncelleme
+        chain.append("apt-get update")
+        
+        # Zinciri Birleştir
+        full_cmd = " && ".join(chain)
+        self.log(f"Toplu işlem başlatılıyor (Tek Şifre Girişi)...")
+        
+        code, out, err = self.runner.run_full(f'pkexec ro-control-root-task "{full_cmd}"')
+        
+        if out: self.log(out)
+        if err: self.log(f"İşlem çıktısı: {err}")
+        
+        return code == 0
+
+    def optimize_sources(self):
+        # Artık batch kullanıyoruz
+        return self.batch_optimize()
 
     def ensure_standard_repos(self):
-        """
-        Ubuntu'nun resmi depolarını (Main, Restricted, Universe, Multiverse) aktif eder.
-        Sürücüler genelde 'restricted' deposunda bulunur.
-        """
-        if not shutil.which("add-apt-repository"):
-            self.runner.run('pkexec driver-pilot-root-task "apt-get install -y software-properties-common"')
-            
-        self.logger.info("Resmi Ubuntu depoları (Restricted/Multiverse) kontrol ediliyor...")
-        # Tek komutla hepsini garantile
-        return self.runner.run('pkexec driver-pilot-root-task "add-apt-repository -y main restricted universe multiverse"')
+        return True # Batch içinde zaten yapılıyor
 
-    def fix_gamemode_repo(self):
-        """
-        GameMode için Universe deposu gerekir (Yukarıdaki işlem bunu zaten kapsar ama yedek olsun).
-        """
-        # ensure_standard_repos zaten universe'ü kapsıyor, sadece update yapalım
-        self.runner.run(f'pkexec driver-pilot-root-task "apt-get update"')
+    def update_repos(self):
+         return True # Batch içinde zaten yapılıyor
