@@ -3,7 +3,7 @@ class AppConfig:
     PRETTY_NAME = "Driver Pilot"
     VERSION = "1.5.0"
     MAINTAINER = "Sopwith <sopwith.osdev@gmail.com>"
-    DESCRIPTION = "Linux sistemleri için akıllı ekran kartı sürücüsü yöneticisi. NVIDIA ve AMD donanımlarını otomatik algılar, en uygun sürücüyü güvenle kurar ve yönetir."
+    DESCRIPTION = "Smart graphics driver manager for Linux systems. Automatically detects NVIDIA and AMD hardware, securely installs the optimal drivers, and manages configuration."
     LICENSE = "GPL-3.0"
     
     CHANGELOG = """

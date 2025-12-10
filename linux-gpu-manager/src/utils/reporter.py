@@ -92,8 +92,31 @@ LOG KAYITLARI:
                 except FileNotFoundError:
                     subprocess.run(["sensible-browser", link], check=False)
 
-            return True
-            
         except Exception as e:
             logging.error(f"Mail istemcisi açılamadı: {e}")
+            return False
+
+    @staticmethod
+    def send_feedback():
+        """Genel geri bildirim için mail istemcisini açar."""
+        try:
+            subject = "Driver Pilot Feedback"
+            body = "\n\n\n--\nDriver Pilot v{} - Linux Driver Manager".format(AppConfig.VERSION)
+            
+            query = urllib.parse.urlencode({"subject": subject, "body": body}, quote_via=urllib.parse.quote)
+            link = f"mailto:{DEVELOPER_EMAIL}?{query}"
+            
+            logging.info("Geri bildirim maili açılıyor...")
+            
+            try:
+                webbrowser.open(link)
+            except Exception:
+                import subprocess
+                try:
+                    subprocess.run(["xdg-open", link], check=False)
+                except:
+                    subprocess.run(["sensible-browser", link], check=False)
+            return True
+        except Exception as e:
+            logging.error(f"Mail açma hatası: {e}")
             return False

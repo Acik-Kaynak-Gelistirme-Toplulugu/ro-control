@@ -7,17 +7,32 @@
   <summary>Smart GPU Driver Manager for Linux</summary>
   <description>
     <p>
-      Driver Pilot is a modern utility designed to simplify the management of NVIDIA and AMD graphics drivers on Linux systems.
-      It provides a user-friendly interface for installation, updates, and system monitoring.
+      Driver Pilot is the ultimate tool for managing graphics drivers on Linux, specifically designed for NVIDIA and AMD users who want a hassle-free experience. 
+      Whether you are a gamer, a developer, or just a daily user, Driver Pilot ensures your GPU runs at its best.
     </p>
-    <p>Key Features:</p>
+    <p>
+      <strong>Why use Driver Pilot?</strong>
+    </p>
     <ul>
-      <li>Express Installation: Automatically detects hardware and installs the optimal drivers.</li>
-      <li>Performance Dashboard: Live monitoring of GPU/CPU temperatures, load, and RAM usage.</li>
-      <li>Hybrid Graphics Control: Manage NVIDIA Prime profiles (Mux Switch) easily.</li>
-      <li>System Safety: Integrated Timeshift backup support and Secure Boot detection.</li>
-      <li>Repository Optimization: Auto-configure the fastest package mirrors for your location.</li>
+      <li>
+        <strong>Smart Express Install:</strong> Forget terminal commands. Our wizard analyzes your hardware and installs the perfect driver version automatically.
+      </li>
+      <li>
+        <strong>Live Performance Hub:</strong> Monitor your GPU temperature, VRAM usage, CPU load, and RAM stats in real-time with a modern, beautiful dashboard.
+      </li>
+      <li>
+        <strong>Laptop Mux Switch Control:</strong> Easily switch between Integrated (Intel) and Dedicated (NVIDIA) graphics to save battery or boost performance (Hybrid Graphics).
+      </li>
+      <li>
+        <strong>Safety First:</strong> Built-in system diagnostics and Timeshift snapshot integration ensure you can always revert changes if something goes wrong.
+      </li>
+      <li>
+        <strong>Gamer Friendly:</strong> One-click setup for Feral GameMode and Steam Flatpak fixes to optimize your gaming rig.
+      </li>
     </ul>
+    <p>
+      Driver Pilot handles the complexity of repositories, kernel modules, and secure boot signing behind the scenes, leaving you with a clean and powerful interface.
+    </p>
   </description>
   <launchable type="desktop-id">driver-pilot.desktop</launchable>
   <screenshots>

@@ -705,6 +705,19 @@ class MainWindow(Gtk.ApplicationWindow):
                   if current_header == f"v{AppConfig.VERSION}": e.set_expanded(True)
                   current_header = None
         scroll.set_child(changelog_box); main_vbox.append(scroll)
+        
+        # Contact Button
+        btn_contain = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        btn_contain.set_halign(Gtk.Align.CENTER)
+        
+        btn_contact = Gtk.Button(label="Geliştirici İle İletişime Geç")
+        btn_contact.set_icon_name("mail-message-new-symbolic")
+        btn_contact.add_css_class("suggested-action")
+        btn_contact.connect("clicked", lambda x: ErrorReporter.send_feedback())
+        
+        btn_contain.append(btn_contact)
+        main_vbox.append(btn_contain)
+        
         win.set_child(main_vbox); win.present()
 
     def show_error_dialog(self, title, message):

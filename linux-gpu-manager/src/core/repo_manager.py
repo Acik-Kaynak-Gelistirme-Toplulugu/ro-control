@@ -47,7 +47,7 @@ class RepoManager:
         # Komutları zincirle
         cmds = []
         cmds.append("cp /etc/apt/sources.list /etc/apt/sources.list.backup_dp")
-        cmds.append(f"sed -i 's/http:\/\/archive.ubuntu.com\/ubuntu/http:\/\/{cc}.archive.ubuntu.com\/ubuntu/g' /etc/apt/sources.list")
+        cmds.append(rf"sed -i 's/http:\/\/archive.ubuntu.com\/ubuntu/http:\/\/{cc}.archive.ubuntu.com\/ubuntu/g' /etc/apt/sources.list")
         
         full_cmd = " && ".join(cmds)
         # Wrapper kullan
