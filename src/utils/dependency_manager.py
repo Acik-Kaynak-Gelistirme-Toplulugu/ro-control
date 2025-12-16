@@ -42,6 +42,11 @@ class DependencyManager:
 
     @staticmethod
     def _install_packages(packages):
+        if sys.platform == "darwin":
+            print("WARNING: MacOS detected. Skipping package installation via apt/pkexec.")
+            print(f"Please manually install if needed: {packages}")
+            return
+
         print("DEBUG: Eksik paketler için yetki isteniyor...")
         try:
             # Kullanıcıdan grafiksel şifre isteyerek paketleri kur

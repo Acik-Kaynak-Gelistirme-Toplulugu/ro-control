@@ -1,109 +1,133 @@
-/* Adwaita (GNOME) teması üzerine eklemeler */
+/* Liquid Glass Theme - GTK Implementation */
 
-/* Global Responsive Layout Helpers */
-.title-1 {
-  font-weight: 800;
-  font-size: 24px; /* Standart */
-  color: #3584e4; /* GNOME Mavisi */
+/* Reset & Window */
+window {
+  background-color: @window_bg_color;
+  color: @window_fg_color;
 }
 
-
-/* Responsive Classes (Managed by Python) */
-.wide .title-1 {
-  font-size: 32px;
-}
-
-.compact .title-1 {
-  font-size: 20px;
-}
-
-.compact .heading {
-  font-size: 14px;
-}
-
-.compact .card-view {
-  padding: 10px;
-  margin: 2px;
-}
-
-
-.heading {
-  font-size: 16px;
-  font-weight: 600;
-  color: alpha(currentColor, 0.9);
-  margin-bottom: 5px;
-}
-
-.dim-label {
-    opacity: 0.7;
-    font-size: 0.9em;
-}
-
-/* Kart Görünümü (Frame yerine daha modern) */
-.card-view {
-    background-color: alpha(currentColor, 0.05);
-    border-radius: 12px;
-    padding: 15px;
-    margin: 5px;
-    transition: background-color 0.2s;
-}
-
-.card-view:hover {
-    background-color: alpha(currentColor, 0.08);
-}
-
-
-/* Butonlar için daha doğal ve sisteme entegre stiller */
-
-.suggested-action {
-  /* GNOME 'suggested-action' class'ı zaten mavidir, biz sadece boyutu ayarlayalım */
-  font-weight: bold;
-  padding: 10px 20px;
-  border-radius: 8px;
-}
-
-.destructive-action {
-  /* GNOME 'destructive-action' class'ı zaten kırmızıdır. */
-  font-weight: bold;
-  padding: 10px 20px;
-  border-radius: 8px;
-  /* Hardcoded renk yerine sistem temasını kullanır */
-}
-
-/* Liste elemanı gibi görünen butonlar için */
-.list-button {
+/* Glassy Header Bar */
+headerbar {
   background-color: transparent;
-  border: 1px solid alpha(currentColor, 0.1);
-  border-radius: 10px;
-  margin-top: 5px;
-  margin-bottom: 5px;
-  padding: 8px;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  margin-bottom: -10px; /* Merge with content visually */
+}
+
+/* Status Bar (Custom Component) */
+.status-bar {
+  background-color: alpha(@card_bg_color, 0.3);
+  border-bottom: 1px solid @border_color;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: alpha(@window_fg_color, 0.6);
+}
+
+/* Tab Navigation Bar */
+.tab-bar {
+  background-color: alpha(@card_bg_color, 0.3);
+  border-bottom: 1px solid @border_color;
+  padding: 12px 16px;
+}
+
+.tab-button {
+  background-color: transparent;
+  color: @window_fg_color;
+  border-radius: 8px;
+  padding: 6px 20px;
+  font-weight: 500;
   transition: all 0.2s;
+  border: none;
 }
 
-.list-button:hover {
-  background-color: alpha(currentColor, 0.05);
-  border-color: alpha(currentColor, 0.3);
+.tab-button:hover {
+  background-color: alpha(@window_fg_color, 0.05);
 }
 
-.list-button:active {
-  background-color: alpha(currentColor, 0.1);
+.tab-button:checked {
+  background-color: alpha(@window_fg_color, 0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+/* Main Content Area */
+.view-container {
+  padding: 0;
+}
 
-frame {
+/* Title & Logo Section */
+.hero-section {
+  padding: 40px 0;
+}
+
+.logo-circle-container {
+  background-image: linear-gradient(135deg, @accent_color, alpha(@accent_color, 0.6));
+  border-radius: 9999px;
+  padding: 2px; /* Border like effect */
+  box-shadow: 0 10px 30px alpha(@accent_color, 0.3);
+}
+
+.logo-circle-inner {
+  background-color: alpha(@window_bg_color, 0.8);
+  border-radius: 9999px;
+  padding: 20px;
+}
+
+.hero-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: @accent_color;
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+.hero-subtitle {
+  font-size: 14px;
+  color: alpha(@window_fg_color, 0.6);
+}
+
+/* Glass Cards (Buttons) */
+.glass-card {
+  background-image: linear-gradient(145deg, @card_bg_color, alpha(@card_bg_color, 0.5));
+  border: 1px solid @border_color;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 15px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.glass-card:hover {
+  background-image: linear-gradient(145deg, alpha(@card_bg_color, 0.9), alpha(@card_bg_color, 0.7));
+  box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+  transform: translateY(-2px); /* Not supported in all GTK versions but worth a try */
+  border-color: @accent_color;
+}
+
+.card-icon-box {
+  background-color: alpha(@window_fg_color, 0.05);
   border-radius: 12px;
-  background-color: alpha(currentColor, 0.03); /* Hafifletilmiş */
-  border: 1px solid alpha(currentColor, 0.1);
+  padding: 12px;
+  margin-right: 16px;
 }
 
-/* Log paneli */
-textview {
-    font-family: 'Monospace';
-    font-size: 13px;
+.card-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: @window_fg_color;
 }
 
-/* Performans Barları */
-.p-green progressbar > trough > progress { background-color: #2ec27e; }
-.p-yellow progressbar > trough > progress { background-color: #f5c211; }
-.p-red progressbar > trough > progress { background-color: #e01b24; }
+.card-desc {
+  font-size: 13px;
+  color: alpha(@window_fg_color, 0.6);
+}
+
+/* Expert View Styles */
+.expert-header {
+  border-bottom: 1px solid @border_color;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+/* Helpers */
+

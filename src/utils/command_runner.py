@@ -24,6 +24,8 @@ class CommandRunner:
                 stderr=subprocess.PIPE,
                 text=True
             )
+            if result.stderr and result.stderr.strip():
+                self.logger.warning(f"Komut uyarısı ({command}): {result.stderr.strip()}")
             return result.stdout.strip()
         except subprocess.CalledProcessError as e:
             # Bazı komutlar (örn: kontrol komutları) hata dönebilir, loglayıp None dönüyoruz

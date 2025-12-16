@@ -71,12 +71,15 @@ class MainWindow(Gtk.ApplicationWindow):
             pass # Gdk hatası olursa varsayılan kullanılır
             
         self.set_default_size(default_w, default_h) 
-        self.load_css()
+        self.set_default_size(default_w, default_h) 
+        # self.load_css() # Moved to after theme init to ensure variables exist
 
         self.target_action = None
         self.selected_version = None 
         self.is_processing = False
+        self.is_processing = False
         self.theme_mode = "system" # system, dark, light
+        self.theme_provider = None # Custom colors provider
 
         # --- Managers ---
         self.repo_manager = RepoManager()
@@ -107,6 +110,7 @@ class MainWindow(Gtk.ApplicationWindow):
         header.pack_end(menu_button)
 
         self.apply_theme()
+        self.load_css()
 
         # --- Logic Classes ---
         self.detector = SystemDetector()
@@ -122,20 +126,52 @@ class MainWindow(Gtk.ApplicationWindow):
         self.gpu_info = self.detector.detect()
 
         
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        # İçeriği dikey ve yatayda esneyecek şekilde ayarla
-        main_box.set_vexpand(True)
-        main_box.set_hexpand(True)
-        
-        # Header Info (Banner)
-        self.status_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.create_info_bars() 
-        self._update_ui_state() 
+        # Custom Layout Container
+        # Root Box: [Header] [Status Bar] [Tab Bar] [Content Stack]
+        self.root_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.set_child(self.root_box)
 
-        main_box.append(self.status_box)
-        main_box.append(self.stack) # Stack'i ekle
+        # 1. Custom Status Bar (Liquid Glass Style)
+        # We need to initialize info/status vars first for safe access
+        self.status_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL) # Keeping it for compatibility with old code logic although hidden
+        self.create_info_bars()
         
-        self.set_child(main_box)
+        self.status_bar_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.status_bar_box.add_css_class("status-bar")
+        self.status_lbl = Gtk.Label(label="Sistem Taranıyor...")
+        self.status_lbl.set_xalign(0)
+        self.status_bar_box.append(self.status_lbl)
+        self.root_box.append(self.status_bar_box)
+
+        # 2. Custom Tab Bar (Only visible when not in expert mode, logically)
+        # But for simplicity in GTK, we keep it as a switcher or just use buttons
+        self.tab_bar_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.tab_bar_box.add_css_class("tab-bar")
+        self.tab_bar_box.set_halign(Gtk.Align.CENTER) # Center tabs
+
+        # Tab Buttons
+        self.btn_tab_install = Gtk.ToggleButton(label="Install")
+        self.btn_tab_install.add_css_class("tab-button")
+        self.btn_tab_install.set_active(True)
+        self.btn_tab_install.connect("toggled", self.on_tab_changed, "simple")
+
+        self.btn_tab_perf = Gtk.ToggleButton(label="Performance")
+        self.btn_tab_perf.add_css_class("tab-button")
+        self.btn_tab_perf.set_group(self.btn_tab_install)
+        self.btn_tab_perf.connect("toggled", self.on_tab_changed, "performance")
+        
+        self.tab_bar_box.append(self.btn_tab_install)
+        self.tab_bar_box.append(self.btn_tab_perf)
+        self.root_box.append(self.tab_bar_box)
+
+        # remove standard stack switcher from header
+        header.set_title_widget(None)
+
+        # 3. Content Area
+        self.stack = Gtk.Stack()
+        self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        self.stack.set_vexpand(True) 
+        self.root_box.append(self.stack)
 
         self.connect("notify::default-width", self._on_window_resize)
         
@@ -148,13 +184,14 @@ class MainWindow(Gtk.ApplicationWindow):
         self.progress_controller = ProgressController(self, self.stack, self.installer, self.repo_manager, self.updater)
         self.progress_view = self.progress_controller.get_view()
 
-        self.stack.add_titled(self.simple_view, "simple", Translator.tr("tab_install"))
+        self.stack.add_named(self.simple_view, "simple")
         self.stack.add_named(self.expert_view, "expert") 
-        self.stack.add_titled(self.perf_view, "performance", Translator.tr("tab_perf"))
+        self.stack.add_named(self.perf_view, "performance")
         self.stack.add_named(self.progress_view, "progress") 
         
         # İlk tarama
         GLib.timeout_add(500, self.run_initial_scan)
+
         
         # Auto Update Check (1 saniye sonra)
         GLib.timeout_add(1000, self._auto_check_updates)
@@ -232,59 +269,114 @@ class MainWindow(Gtk.ApplicationWindow):
         
         self.status_box.append(self.sb_banner)
 
-    def create_simple_view(self):
-        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=30)
-        vbox.set_margin_top(50); vbox.set_margin_bottom(50)
-        vbox.set_margin_start(100); vbox.set_margin_end(100) # Odaklanmış görünüm
-        vbox.set_valign(Gtk.Align.CENTER)
+    def on_tab_changed(self, btn, page_name):
+        if btn.get_active():
+            self.stack.set_visible_child_name(page_name)
 
-        # Başlık ve Logo
-        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
-        title_box.set_halign(Gtk.Align.CENTER)
+    def create_simple_view(self):
+        # Ana Kap
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        vbox.set_valign(Gtk.Align.CENTER)
+        vbox.set_halign(Gtk.Align.CENTER)
+        
+        # 1. Hero Section (Logo & Title)
+        hero_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        hero_box.add_css_class("hero-section")
+        hero_box.set_halign(Gtk.Align.CENTER)
+        
+        # Logo Circle
+        logo_outer = Gtk.Box(); logo_outer.add_css_class("logo-circle-container")
+        logo_inner = Gtk.Box(); logo_inner.add_css_class("logo-circle-inner")
         
         icon = self.get_logo_image()
-        icon.set_pixel_size(64)
+        icon.set_pixel_size(48)
+        logo_inner.append(icon)
+        logo_outer.append(logo_inner)
         
-        text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        text_box.set_valign(Gtk.Align.CENTER)
-        lbl_title = Gtk.Label(label="Kurulum Tipini Seçin"); lbl_title.add_css_class("title-1"); lbl_title.set_xalign(0)
-        lbl_desc = Gtk.Label(label="Donanımınız için optimize edilmiş seçenekler."); lbl_desc.add_css_class("dim-label"); lbl_desc.set_xalign(0)
-        text_box.append(lbl_title); text_box.append(lbl_desc)
+        # Title
+        lbl_title = Gtk.Label(label="Kurulum Tipini Seçin"); lbl_title.add_css_class("hero-title")
+        lbl_desc = Gtk.Label(label="Donanımınız için optimize edilmiş seçenekler."); lbl_desc.add_css_class("hero-subtitle")
         
-        title_box.append(icon); title_box.append(text_box)
-        vbox.append(title_box)
+        hero_box.append(logo_outer)
+        hero_box.append(lbl_title)
+        hero_box.append(lbl_desc)
+        
+        vbox.append(hero_box)
 
-        # Seçenekler Listesi
+        # 2. Options (Glass Cards)
         opts_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+        # opts_box.set_size_request(600, -1) # Genişlik sınırlaması
         
         # En iyi sürümü belirle
         best_ver = self.available_versions[0] if self.available_versions else "Auto"
         is_amd = "AMD" in self.gpu_info.get("vendor", "")
         
-        # Açıklama metni
-        # Açıklama metni
         express_title = Translator.tr("express_title")
-        if is_amd:
-            express_desc = Translator.tr("express_desc_amd")
-        else:
-            express_desc = Translator.tr("express_desc_nvidia", best_ver)
+        express_desc = Translator.tr("express_desc_amd") if is_amd else Translator.tr("express_desc_nvidia", best_ver)
 
-        # 1. Hızlı Kurulum Butonu
-        btn_express = self.create_option_row(
-            express_title, express_desc, "emblem-default-symbolic", self.on_express_install_clicked
+        # Express Install Card
+        btn_express = self.create_glass_card(
+            express_title, 
+            express_desc, 
+            "emblem-default-symbolic", # Icon
+            self.on_express_install_clicked
         )
         opts_box.append(btn_express)
         
-        # 2. Özel Kurulum Butonu
-        btn_custom = self.create_option_row(
+        # Custom Install Card
+        btn_custom = self.create_glass_card(
             Translator.tr("custom_title"), 
-            Translator.tr("custom_desc"), 
-            "preferences-system-symbolic", self.on_custom_install_clicked
+            "Versiyon, çekirdek tipi ve temizlik ayarlarını manuel yapılandırın.", 
+            "preferences-system-symbolic",
+            self.on_custom_install_clicked
         )
         opts_box.append(btn_custom)
         
         vbox.append(opts_box)
-        return vbox
+        
+        # Scrollable container for smaller screens
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_child(vbox)
+        return scroll
+
+    def create_glass_card(self, title, desc, icon_name, callback):
+        btn = Gtk.Button()
+        # btn.set_has_frame(False) # GTK4 doesn't have this exactly the same, handled by CSS
+        
+        # Content Layout
+        card_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        card_box.add_css_class("glass-card")
+        card_box.set_size_request(500, -1) # Sabit genişlik tasarımı
+        
+        # Icon Box
+        icon_box = Gtk.Box(); icon_box.add_css_class("card-icon-box")
+        icon_box.set_valign(Gtk.Align.CENTER)
+        img = Gtk.Image.new_from_icon_name(icon_name); img.set_pixel_size(24)
+        icon_box.append(img)
+        
+        # Text
+        text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        text_box.set_valign(Gtk.Align.CENTER)
+        text_box.set_hexpand(True)
+        
+        lbl_t = Gtk.Label(label=title, xalign=0); lbl_t.add_css_class("card-title")
+        lbl_d = Gtk.Label(label=desc, xalign=0); lbl_d.add_css_class("card-desc")
+        lbl_d.set_wrap(True); lbl_d.set_max_width_chars(50)
+        
+        text_box.append(lbl_t); text_box.append(lbl_d)
+        
+        # Arrow
+        arrow = Gtk.Image.new_from_icon_name("go-next-symbolic")
+        arrow.set_opacity(0.5)
+        
+        card_box.append(icon_box)
+        card_box.append(text_box)
+        card_box.append(arrow)
+        
+        btn.set_child(card_box)
+        btn.connect("clicked", callback)
+        return btn
 
     def create_option_row(self, title, desc, icon_name, callback):
         btn = Gtk.Button()
@@ -543,7 +635,14 @@ class MainWindow(Gtk.ApplicationWindow):
     def _update_ui_state(self):
         gpu = self.gpu_info
         sb_status = "Aktif" if gpu.get("secure_boot") else "Devre Dışı"
-        self.status_label.set_text(f"Aktif Sürücü: {gpu.get('driver_in_use')} | Secure Boot: {sb_status}")
+        gpu = self.gpu_info
+        sb_status = "Aktif" if gpu.get("secure_boot") else "Devre Dışı"
+        
+        # Update custom status bar
+        if hasattr(self, "status_lbl"):
+             driver = gpu.get('driver_in_use', 'Bilinmiyor')
+             self.status_lbl.set_text(f"Aktif Sürücü: {driver} | Secure Boot: {sb_status}")
+
 
         if gpu.get("secure_boot") and "NVIDIA" in gpu.get("vendor", ""):
              self.sb_banner.set_revealed(True)
@@ -612,7 +711,11 @@ class MainWindow(Gtk.ApplicationWindow):
              return
         self.selected_version = None; self.validate_and_start("install_nvidia_open", "Açık Kaynak Kurulumu...")
 
-    def on_nouveau_clicked(self, w): self.validate_and_start("remove", "Nouveau Dönüşü (Reset)...")
+    def on_nouveau_clicked(self, w): 
+        is_deep = True
+        if hasattr(self, "chk_deep_clean") and self.chk_deep_clean:
+            is_deep = self.chk_deep_clean.get_active()
+        self.validate_and_start("remove", "Nouveau Dönüşü (Reset)...", deep_clean=is_deep)
     def on_open_clicked(self, w): self.validate_and_start("install_nvidia_open", f"Open Kernel v{self.selected_version}...")
     def on_closed_clicked(self, w): self.validate_and_start("install_nvidia_closed", f"Proprietary v{self.selected_version}...")
     
@@ -654,7 +757,7 @@ class MainWindow(Gtk.ApplicationWindow):
             
         return response == Gtk.ResponseType.OK
 
-    def validate_and_start(self, action, desc):
+    def validate_and_start(self, action, desc, **kwargs):
         if not self.check_network() and action != "remove":
             self.show_error_dialog("İnternet Yok", "Sürücü indirmek için internet bağlantısı gereklidir.")
             return
@@ -664,12 +767,17 @@ class MainWindow(Gtk.ApplicationWindow):
 
         if "install" in action or action == "remove":
             if shutil.which("timeshift"):
-                self.ask_for_snapshot(action, desc)
+                self.ask_for_snapshot(action, desc, **kwargs)
                 return
 
-        self.progress_controller.start_transaction(action, desc, version=self.selected_version)
+        self.progress_controller.start_transaction(
+             action=action, 
+             desc=desc, 
+             version=self.selected_version,
+             **kwargs
+        )
 
-    def ask_for_snapshot(self, action, desc):
+    def ask_for_snapshot(self, action, desc, **kwargs):
         dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.YES_NO, text="Sistem Yedeği")
         dialog.props.secondary_text = "İşleme başlamadan önce Timeshift ile sistem yedeği (snapshot) alınsın mı?\n\n(Önerilir)"
         dialog.add_button("Yedeksiz Devam Et", Gtk.ResponseType.NO)
@@ -677,7 +785,7 @@ class MainWindow(Gtk.ApplicationWindow):
         def on_resp(d, r):
             d.destroy()
             should_snapshot = (r == Gtk.ResponseType.YES)
-            self.progress_controller.start_transaction(action, desc, version=self.selected_version, snapshot=should_snapshot)
+            self.progress_controller.start_transaction(action, desc, version=self.selected_version, snapshot=should_snapshot, **kwargs)
         dialog.connect("response", on_resp)
         dialog.present()
 
@@ -723,24 +831,83 @@ class MainWindow(Gtk.ApplicationWindow):
         else:
             settings = Gtk.Settings.get_default()
             if settings: 
-                # Standart GTK'da 'system' demek aslında tercihi 0 yapmaktır
-                if self.theme_mode == "dark":
+                if self.theme_mode == "system":
+                    # Sistem sorgusu yapmak lazım ama basitçe default
+                    settings.props.gtk_application_prefer_dark_theme = False
+                elif self.theme_mode == "dark":
                     settings.props.gtk_application_prefer_dark_theme = True
                 elif self.theme_mode == "light":
                     settings.props.gtk_application_prefer_dark_theme = False
+
+        # CSS Renk Paletini Yükle
+        self.load_theme_colors()
+
+    def load_theme_colors(self):
+        """Seçili temaya göre theme_light.css veya theme_dark.css dosyasını yükler."""
+        # Provider temizle
+        if self.theme_provider:
+            if IsAdwaita or Gtk.get_major_version() == 4:
+                Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), self.theme_provider)
+            else:
+                Gtk.StyleContext.remove_provider_for_screen(Gdk.Screen.get_default(), self.theme_provider)
+            self.theme_provider = None
+
+        # Modu belirle
+        is_dark = False
+        if self.theme_mode == "dark": is_dark = True
+        elif self.theme_mode == "light": is_dark = False
+        else:
+            # System ise basit bir check (Adwaita varsa kolay)
+            if IsAdwaita:
+               style_manager = Adw.StyleManager.get_default()
+               is_dark = style_manager.get_dark()
+            else:
+               settings = Gtk.Settings.get_default()
+               is_dark = settings.props.gtk_application_prefer_dark_theme
+
+        filename = "theme_dark.css" if is_dark else "theme_light.css"
+        
+        provider = Gtk.CssProvider()
+        path = os.path.join(os.path.dirname(__file__), "assets", filename)
+        if not os.path.exists(path): path = f"/opt/ro-control/src/ui/assets/{filename}"
+        
+        if os.path.exists(path):
+            try:
+                provider.load_from_path(path)
+                self.theme_provider = provider
+                priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1 # Common stilden daha öncelikli olsun
+                
+                if IsAdwaita or Gtk.get_major_version() == 4:
+                    Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, priority)
                 else:
-                    settings.props.gtk_application_prefer_dark_theme = False # Varsayılan davranış
+                    Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider, priority)
+            except Exception as e:
+                logging.error(f"Tema yükleme hatası ({filename}): {e}")
+
 
     def load_css(self):
+        # Eğer varsa eski provider'ı temizle
+        if hasattr(self, "style_provider") and self.style_provider:
+             if IsAdwaita or Gtk.get_major_version() == 4:
+                Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), self.style_provider)
+             else:
+                Gtk.StyleContext.remove_provider_for_screen(Gdk.Screen.get_default(), self.style_provider)
+             self.style_provider = None
+
         p = Gtk.CssProvider()
         path = os.path.join(os.path.dirname(__file__), "assets", "style.css")
         if not os.path.exists(path): path = "/opt/ro-control/src/ui/assets/style.css"
         if os.path.exists(path):
-            p.load_from_path(path)
-            if IsAdwaita or Gtk.get_major_version() == 4:
-                Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), p, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-            else:
-                Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), p, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            try:
+                p.load_from_path(path)
+                self.style_provider = p
+                # Theme color'lardan sonra gelmeli ama priority birleşik çalışır
+                if IsAdwaita or Gtk.get_major_version() == 4:
+                    Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), p, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+                else:
+                    Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), p, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            except Exception as e:
+                logging.error(f"Style CSS yükleme hatası: {e}")
 
     # --- Helpers ---
     def get_logo_image(self):

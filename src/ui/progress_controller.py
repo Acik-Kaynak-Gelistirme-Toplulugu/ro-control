@@ -90,10 +90,11 @@ class ProgressController:
     def get_view(self):
         return self.view_box
 
-    def start_transaction(self, action, desc, version=None, update_url=None, snapshot=False):
+    def start_transaction(self, action, desc, version=None, update_url=None, snapshot=False, deep_clean=None):
         self.target_action = action
         self.selected_version = version
         self.update_url = update_url
+        self.chk_deep_clean = deep_clean
         
         # UI Reset
         self.stack.set_visible_child_name("progress")
@@ -173,16 +174,15 @@ class ProgressController:
             elif self.target_action == "self_update":
                 success = self._do_self_update()
             elif self.target_action == "remove":
-                # Deep clean check
-                is_deep = False
-                if self.chk_deep_clean and self.chk_deep_clean.get_active(): is_deep = True
+                # Deep clean check passed via start_transaction or default
+                is_deep = self.chk_deep_clean if self.chk_deep_clean is not None else True
                 success = self.installer.remove_nvidia(deep_clean=is_deep)
             elif self.target_action == "install_nvidia_open":
-                ver = self.selected_version if self.selected_version else 535
-                success = self.installer.install_nvidia_open_kernel(ver)
+                ver = self.selected_version if self.selected_version else "535"
+                success = self.installer.install_nvidia_open(version=ver)
             elif self.target_action == "install_nvidia_closed":
-                ver = self.selected_version if self.selected_version else 535
-                success = self.installer.install_nvidia_proprietary(ver)
+                ver = self.selected_version if self.selected_version else "535"
+                success = self.installer.install_nvidia_closed(version=ver)
             elif "amd" in self.target_action:
                 success = self.installer.install_amd_open()
             
