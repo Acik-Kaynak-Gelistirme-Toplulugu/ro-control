@@ -345,12 +345,11 @@ impl ffi::GpuController {
     }
 
     fn check_network(mut self: Pin<&mut Self>) {
-        use std::net::TcpStream;
+        use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
         use std::time::Duration;
 
-        let connected =
-            TcpStream::connect_timeout(&"8.8.8.8:53".parse().unwrap(), Duration::from_secs(3))
-                .is_ok();
+        let dns_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)), 53);
+        let connected = TcpStream::connect_timeout(&dns_addr, Duration::from_secs(3)).is_ok();
 
         self.as_mut().set_has_internet(connected);
     }
