@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag to release (example: v1.0.0 or v1.0.0-alpha.1)"
+        required: true
+        default: "v1.0.0-alpha.1"
 
 permissions:
   contents: write
@@ -16,8 +22,33 @@ jobs:
     name: Build Release
     runs-on: ubuntu-latest
     container: fedora:40
+    outputs:
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+      release_version: ${{ steps.meta.outputs.release_version }}
+      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.release_tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${TAG#v}"
+
+          if [[ "$VERSION" == *-* ]]; then
+            IS_PRERELEASE=true
+          else
+            IS_PRERELEASE=false
+          fi
+
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "release_version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: |
@@ -35,10 +66,12 @@ jobs:
 
       - name: Verify tag matches Cargo.toml version
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          set -euo pipefail
+          TAG_VERSION="${{ steps.meta.outputs.release_version }}"
+          TAG_BASE_VERSION="${TAG_VERSION%%-*}"
           CARGO_VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          if [ "$TAG_VERSION" != "$CARGO_VERSION" ]; then
-            echo "Tag version ($TAG_VERSION) does not match Cargo.toml version ($CARGO_VERSION)"
+          if [ "$TAG_BASE_VERSION" != "$CARGO_VERSION" ]; then
+            echo "Tag base version ($TAG_BASE_VERSION) does not match Cargo.toml version ($CARGO_VERSION)"
             exit 1
           fi
 
@@ -47,7 +80,8 @@ jobs:
 
       - name: Build RPM package
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          set -euo pipefail
+          VERSION="${{ steps.meta.outputs.release_version }}"
           TOPDIR="$PWD/rpmbuild"
 
           mkdir -p "$TOPDIR/SOURCES" "$TOPDIR/SPECS" "$TOPDIR/RPMS" "$TOPDIR/SRPMS" "$TOPDIR/BUILD" "$TOPDIR/BUILDROOT"
@@ -63,12 +97,15 @@ jobs:
 
       - name: Package tarball
         run: |
-          mkdir -p ro-control-${{ github.ref_name }}
-          cp target/release/ro-control ro-control-${{ github.ref_name }}/
-          cp -r data/ ro-control-${{ github.ref_name }}/
-          cp scripts/ro-control-root-task ro-control-${{ github.ref_name }}/
-          cp LICENSE README.md ro-control-${{ github.ref_name }}/
-          tar czf ro-control-${{ github.ref_name }}-x86_64-linux.tar.gz ro-control-${{ github.ref_name }}/
+          set -euo pipefail
+          VERSION="${{ steps.meta.outputs.release_version }}"
+          PKG_DIR="ro-control-v${VERSION}"
+          mkdir -p "$PKG_DIR"
+          cp target/release/ro-control "$PKG_DIR/"
+          cp -r data/ "$PKG_DIR/"
+          cp scripts/ro-control-root-task "$PKG_DIR/"
+          cp LICENSE README.md "$PKG_DIR/"
+          tar czf "ro-control-v${VERSION}-x86_64-linux.tar.gz" "$PKG_DIR/"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -95,6 +132,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.build.outputs.release_tag }}
+          name: ro-control ${{ needs.build.outputs.release_tag }}
+          prerelease: ${{ needs.build.outputs.is_prerelease == 'true' }}
           generate_release_notes: true
           files: |
             ro-control-*.tar.gz
