@@ -12,8 +12,6 @@
   <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/releases"><img src="https://img.shields.io/github/v/release/Acik-Kaynak-Gelistirme-Toplulugu/ro-control?style=flat-square&color=blue" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green?style=flat-square" alt="License"></a>
   <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/actions"><img src="https://img.shields.io/github/actions/workflow/status/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/ci.yml?style=flat-square&label=CI" alt="CI"></a>
-  <img src="https://img.shields.io/badge/language-Rust-orange?style=flat-square" alt="Rust">
-  <img src="https://img.shields.io/badge/toolkit-Qt6%20%2B%20QML-41CD52?style=flat-square" alt="Qt6 + QML">
   <img src="https://img.shields.io/badge/platform-Fedora%20Linux-51A2DA?style=flat-square" alt="Fedora">
 </p>
 
@@ -32,7 +30,7 @@
 
 ---
 
-ro-Control is a native Linux desktop application that simplifies GPU driver management. Built in **Rust** with **Qt6 + QML**, it provides a modern interface for installing, configuring, and monitoring NVIDIA graphics drivers on Fedora and other Linux distributions.
+ro-Control is a native Linux desktop application that simplifies GPU driver management. It provides a modern interface for installing, configuring, and monitoring NVIDIA graphics drivers on Fedora and other Linux distributions.
 
 <!-- TODO: Add screenshots
 <p align="center">
@@ -120,9 +118,9 @@ ro-control
 
 ```text
 ro-control/
-├── src/                    # Rust source code
+├── src/                    # Application source code
 │   ├── core/               #   Business logic (detection, installation, monitoring)
-│   ├── qml/                #   Qt6 + QML interface
+│   ├── qml/                #   Interface files
 │   └── utils/              #   Shared utilities (i18n, logging, commands)
 ├── data/                   # FreeDesktop data files
 │   ├── icons/              #   Hicolor theme icons (scalable + symbolic SVG)
@@ -139,7 +137,7 @@ ro-control/
 │   ├── ARCHITECTURE.md     #   Technical architecture
 │   └── BUILDING.md         #   Build instructions
 ├── .github/                # CI/CD and issue templates
-├── Cargo.toml              # Rust dependencies
+├── Cargo.toml              # Project manifest
 ├── Makefile                # Build/install targets
 ├── CHANGELOG.md            # Release history
 ├── CONTRIBUTING.md         # Contribution guide
@@ -179,5 +177,5 @@ This project is licensed under the [GPL-3.0](LICENSE) license.
 ---
 
 <div align="center">
-  <sub>Built with 🦀 Rust and ❤️ by <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu">Açık Kaynak Geliştirme Topluluğu</a></sub>
+  <sub>Made by <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu">Açık Kaynak Geliştirme Topluluğu</a></sub>
 </div>

@@ -95,7 +95,7 @@
   <releases>
     <release version="1.0.0" date="2026-02-14">
       <description>
-        <p>Initial stable release — rewritten in Rust for native performance.</p>
+        <p>Initial stable release focused on native performance and reliability.</p>
         <ul>
           <li>NVIDIA driver management via RPM Fusion (akmod-nvidia)</li>
           <li>Live GPU/CPU/RAM performance monitoring dashboard</li>

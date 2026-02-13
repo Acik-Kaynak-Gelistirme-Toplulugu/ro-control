@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Complete rewrite in Rust for native performance and memory safety
-- GTK4 + libadwaita UI — compatible with KDE Plasma, GNOME, and other desktops
+- Major architecture refresh focused on performance and memory safety
+- Modernized desktop interface across Linux environments
 - NVIDIA proprietary driver installation via RPM Fusion (`akmod-nvidia`)
 - NVIDIA Open Kernel module installation
 - Driver removal with optional deep clean
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Migrated from Python/PyGObject to Rust/gtk4-rs
+- Reworked core modules and project layout
 - Package management focused on DNF/RPM Fusion (Fedora-first)
 - Initramfs regeneration uses `dracut` (Fedora-native)
 - Desktop entry and metainfo follow latest FreeDesktop standards

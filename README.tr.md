@@ -12,8 +12,6 @@
   <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/releases"><img src="https://img.shields.io/github/v/release/Acik-Kaynak-Gelistirme-Toplulugu/ro-control?style=flat-square&color=blue" alt="Sürüm"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/lisans-GPL--3.0-green?style=flat-square" alt="Lisans"></a>
   <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/actions"><img src="https://img.shields.io/github/actions/workflow/status/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/ci.yml?style=flat-square&label=CI" alt="CI"></a>
-  <img src="https://img.shields.io/badge/dil-Rust-orange?style=flat-square" alt="Rust">
-  <img src="https://img.shields.io/badge/aray%C3%BCz-Qt6%20%2B%20QML-41CD52?style=flat-square" alt="Qt6 + QML">
   <img src="https://img.shields.io/badge/platform-Fedora%20Linux-51A2DA?style=flat-square" alt="Fedora">
 </p>
 
@@ -32,7 +30,7 @@
 
 ---
 
-ro-Control, Linux üzerinde GPU sürücü yönetimini kolaylaştıran yerel bir masaüstü uygulamasıdır. **Rust** ve **Qt6 + QML** ile geliştirilmiştir; Fedora ve benzeri dağıtımlarda NVIDIA sürücülerini kurma, yapılandırma ve izleme süreçlerini sadeleştirir.
+ro-Control, Linux üzerinde GPU sürücü yönetimini kolaylaştıran yerel bir masaüstü uygulamasıdır; Fedora ve benzeri dağıtımlarda NVIDIA sürücülerini kurma, yapılandırma ve izleme süreçlerini sadeleştirir.
 
 ## Özellikler
 
@@ -111,9 +109,9 @@ ro-control
 
 ```text
 ro-control/
-├── src/                    # Rust kaynak kodu
+├── src/                    # Uygulama kaynak kodu
 │   ├── core/               # İş mantığı (tespit, kurulum, izleme)
-│   ├── qml/                # Qt6 + QML arayüz
+│   ├── qml/                # Arayüz dosyaları
 │   └── utils/              # Yardımcı modüller
 ├── data/                   # FreeDesktop veri dosyaları
 ├── packaging/              # RPM/Flatpak paketleme dosyaları
@@ -137,5 +135,5 @@ Bu proje [GPL-3.0](LICENSE) lisansı ile dağıtılmaktadır.
 ---
 
 <div align="center">
-  <sub>🦀 Rust ile geliştirildi — <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu">Açık Kaynak Geliştirme Topluluğu</a></sub>
+  <sub>❤️ ile geliştirildi — <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu">Açık Kaynak Geliştirme Topluluğu</a></sub>
 </div>

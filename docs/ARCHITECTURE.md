@@ -2,16 +2,14 @@
 
 ## Overview
 
-ro-Control is a native Linux desktop application written in Rust, using GTK4 and
-libadwaita for its user interface. It manages GPU drivers (primarily NVIDIA) on
-Fedora-based systems through DNF and RPM Fusion.
+ro-Control is a native Linux desktop application focused on GPU driver management
+(primarily NVIDIA) on Fedora-based systems through DNF and RPM Fusion.
 
 ## Module Structure
 
 ```
 src/
 ├── main.rs              ← Entry point: logging, i18n, app launch
-├── app.rs               ← GtkApplication / AdwApplication bootstrap
 ├── config.rs            ← Application constants (APP_ID, VERSION, etc.)
 │
 ├── core/                ← Business logic (no UI dependencies)
@@ -20,13 +18,10 @@ src/
 │   ├── tweaks.rs        ← System tweaks (GPU stats, GameMode, Wayland fix)
 │   └── updater.rs       ← Self-update via GitHub Releases API
 │
-├── ui/                  ← User interface (GTK4 + libadwaita)
-│   ├── window.rs        ← Main window, navigation, state management
-│   ├── install_view.rs  ← Express/Custom install cards
-│   ├── expert_view.rs   ← Advanced driver management + tools
-│   ├── perf_view.rs     ← Live performance monitoring dashboard
-│   ├── progress_view.rs ← Operation progress with log output
-│   └── style.rs         ← CSS theme (Liquid Glass)
+├── qml/                 ← User interface files
+│   ├── Main.qml         ← Main window, navigation, state management
+│   ├── pages/           ← Install/Expert/Perf/Progress pages
+│   └── components/      ← Reusable interface components
 │
 └── utils/               ← Cross-cutting concerns
     ├── command.rs       ← Shell command execution wrapper
@@ -50,10 +45,10 @@ src/
 
 ### 3. UI Architecture
 
-- **Stack-based navigation**: `GtkStack` with named pages
-- **GIO Actions**: Cross-view navigation via `SimpleAction`
-- **Thread safety**: Background operations run in `std::thread`, UI updates via `glib::idle_add`
-- **Theme**: LibAdwaita handles light/dark mode; custom CSS provides "Liquid Glass" overlay
+- **Stack-based navigation** with dedicated page views
+- **Action-driven flow** for cross-view state transitions
+- **Thread safety**: Background operations run in worker threads, UI updates via event loop
+- **Theme-aware interface** with desktop style integration
 
 ### 4. Translation
 
@@ -73,7 +68,7 @@ src/
 ```
 User Action → UI View → GIO Action → Core Module → command::run() → pkexec → System
                 ↑                                         |
-                └─────── glib::idle_add (UI update) ──────┘
+                └──────── event-loop queue (UI update) ───┘
 ```
 
 ## Security Model

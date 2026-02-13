@@ -92,7 +92,7 @@ update-desktop-database %{_datadir}/applications &>/dev/null || :
 
 %changelog
 * Fri Feb 14 2026 Sopwith <sopwith.osdev@gmail.com> - 1.0.0-1
-- Initial native release with Qt6 + QML + Rust (cxx-qt)
+- Initial native stable release
 - Fedora-native architecture with DNF/RPM Fusion support
 - Qt Quick Controls 2 UI with KDE Breeze native style
 - NVIDIA driver management (Proprietary & Open Kernel)

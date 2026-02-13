@@ -12,8 +12,8 @@ Use this as a reference when designing the interface in Figma.
 **Name:** ro-Control
 **Type:** NVIDIA GPU Driver Manager (system utility)
 **Platform:** Fedora-based Linux distro, KDE Plasma 6 desktop
-**Toolkit:** Qt6 + QML + Qt Quick Controls 2 (NOT Kirigami)
-**Language:** Rust (backend), QML (frontend)
+**UI Framework:** Native desktop UI stack
+**Implementation:** Modular backend + declarative frontend
 
 ### What it does (in one sentence):
 
@@ -38,7 +38,7 @@ Use this as a reference when designing the interface in Figma.
 | Active RAM  | < 40 MB          | During download + install                    |
 | CPU idle    | 0%               | No background work when idle                 |
 | CPU active  | < 5% single core | Only during download/install                 |
-| Binary size | < 5 MB           | Lean Rust binary                             |
+| Binary size | < 5 MB           | Lean native binary                           |
 | Animations  | 60fps or none    | No choppy animations — either smooth or skip |
 
 ### Design Implications:

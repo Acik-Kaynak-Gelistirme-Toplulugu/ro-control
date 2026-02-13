@@ -2,8 +2,7 @@
 
 ## Prerequisites
 
-ro-Control is built with Rust, Qt6, and cxx-qt (Rust–Qt bridge).
-The UI uses Qt Quick Controls 2 with KDE Breeze style for native KDE Plasma look.
+ro-Control requires the development packages listed below for successful builds.
 
 ### Fedora (Primary target)
 
@@ -107,8 +106,8 @@ make lint
 
 ```text
 src/
-├── main.rs          # Qt6 app entry point (QApplication + QML engine)
-├── bridge.rs        # cxx-qt bridge — QObjects exposed to QML
+├── main.rs          # Application entry point
+├── bridge.rs        # Bridge layer for UI and backend
 ├── config.rs        # App constants (unchanged)
 ├── core/            # Backend logic (unchanged)
 │   ├── detector.rs  # GPU/CPU/OS detection
@@ -119,10 +118,10 @@ src/
 │   ├── command.rs   # Shell command runner
 │   ├── i18n.rs      # 16-language translation system
 │   └── logger.rs    # env_logger setup
-└── qml/             # Qt Quick UI
+└── qml/             # Interface files
     ├── Main.qml     # Application window + sidebar nav
     ├── pages/       # Page views
-    └── components/  # Reusable QML components
+    └── components/  # Reusable UI components
 ```
 
 ### Environment Variables
