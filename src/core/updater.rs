@@ -33,10 +33,6 @@ pub fn check_for_updates() -> UpdateInfo {
         release_notes: String::new(),
     };
 
-    if config::GITHUB_REPO.is_empty() {
-        return no_update;
-    }
-
     let url = format!(
         "https://api.github.com/repos/{}/releases/latest",
         config::GITHUB_REPO
