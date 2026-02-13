@@ -25,6 +25,11 @@
   <a href="#license">License</a>
 </p>
 
+<p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/README-English-blue?style=flat-square" alt="README in English"></a>
+  <a href="README.tr.md"><img src="https://img.shields.io/badge/README-T%C3%BCrk%C3%A7e-red?style=flat-square" alt="README in Turkish"></a>
+</p>
+
 ---
 
 ro-Control is a native Linux desktop application that simplifies GPU driver management. Built in **Rust** with **Qt6 + QML**, it provides a modern interface for installing, configuring, and monitoring NVIDIA graphics drivers on Fedora and other Linux distributions.
