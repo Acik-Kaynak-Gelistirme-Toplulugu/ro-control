@@ -22,8 +22,10 @@ jobs:
       - name: Install dependencies
         run: |
           dnf install -y \
+            git \
             rust cargo \
             cmake gcc-c++ pkgconf-pkg-config \
+            extra-cmake-modules \
             qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtwayland-devel \
             kf6-qqc2-desktop-style \
             rpm-build
