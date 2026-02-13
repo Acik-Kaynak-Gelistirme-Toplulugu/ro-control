@@ -55,7 +55,7 @@ src/
 - Simple dictionary-based system using `OnceLock<HashMap>`
 - Detects system language from `LANG` / `LC_ALL` environment variables
 - Fallback: English
-- Future: migrate to gettext for community translations
+- Future: optional gettext support for community translations
 
 ### 5. Packaging
 

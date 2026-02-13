@@ -131,7 +131,7 @@ Use this as a reference when designing the interface in Figma.
 │  │  ● 560.35.03  (Latest Stable) ✓   │  │
 │  │  ○ 555.42.06  (Installed)         │  │
 │  │  ○ 550.120    (LTS Branch)        │  │
-│  │  ○ 545.29.06  (Legacy)           │  │
+│  │  ○ 545.29.06  (Compatibility)    │  │
 │  └────────────────────────────────────┘  │
 │                                          │
 │  Kernel Module:  ○ Proprietary  ○ Open   │

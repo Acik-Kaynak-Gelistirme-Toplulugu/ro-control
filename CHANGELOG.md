@@ -40,6 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - macOS development simulation mode
 - React/Vite web UI (tema/)
 - Debian `.deb` packaging (replaced by `.rpm`)
-- Python runtime dependency
+- Unused runtime dependencies
 
 [1.0.0]: https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases/tag/v1.0.0
