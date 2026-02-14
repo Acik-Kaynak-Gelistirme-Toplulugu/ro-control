@@ -7,16 +7,13 @@ pub fn init() {
     let mut loggers: Vec<Box<dyn SharedLogger>> = vec![];
 
     // Terminal logger (Info level by default, or RUST_LOG env)
-    if let Some(logger) = TermLogger::new(
+    let logger = TermLogger::new(
         LevelFilter::Info,
         Config::default(),
         TerminalMode::Mixed,
         ColorChoice::Auto,
-    ) {
-        loggers.push(logger);
-    } else {
-        loggers.push(SimpleLogger::new(LevelFilter::Info, Config::default()));
-    }
+    );
+    loggers.push(logger);
 
     // File logger (Debug level - captures everything)
     if let Some(data_dir) = dirs::data_local_dir() {

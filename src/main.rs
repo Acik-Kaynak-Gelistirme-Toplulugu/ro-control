@@ -24,9 +24,9 @@ fn main() {
     // Associate with desktop file for taskbar integration
     QGuiApplication::set_desktop_file_name(&QString::from(config::APP_ID));
 
-    // Use KDE Breeze style if no style override is set
+    // Use a portable default style if no style override is set
     if std::env::var("QT_QUICK_CONTROLS_STYLE").is_err() {
-        QQuickStyle::set_style(&QString::from("org.kde.desktop"));
+        QQuickStyle::set_style(&QString::from("Fusion"));
     }
 
     // Load QML entry point

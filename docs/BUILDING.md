@@ -130,7 +130,7 @@ src/
 | ------------------------- | -------------------------------------------- | ----------------- |
 | `RUST_LOG`                | Log level (`debug`, `info`, `warn`, `error`) | `info`            |
 | `LANG`                    | UI language (`tr_TR.UTF-8` for Turkish)      | System default    |
-| `QT_QUICK_CONTROLS_STYLE` | Override QML style                           | `org.kde.desktop` |
+| `QT_QUICK_CONTROLS_STYLE` | Override QML style                           | `Fusion`          |
 
 ### Debugging
 

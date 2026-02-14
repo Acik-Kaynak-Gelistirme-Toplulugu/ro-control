@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
+import "../components"
 import io.github.AcikKaynakGelistirmeToplulugu.rocontrol
 
 // Progress Page — Real-time installation/removal progress
@@ -10,7 +11,7 @@ Item {
     id: progressPage
 
     required property var controller
-    signal finished()
+    signal finished
 
     Controls.ScrollView {
         anchors.fill: parent
@@ -20,13 +21,13 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 16
 
-            Item { Layout.preferredHeight: 40 }
+            Item {
+                Layout.preferredHeight: 40
+            }
 
             // ─── Title ───
             Controls.Label {
-                text: controller.current_status === "removing"
-                    ? qsTr("Removing Drivers...")
-                    : qsTr("Installing nvidia-%1").arg(controller.best_version)
+                text: controller.current_status === "removing" ? qsTr("Removing Drivers...") : qsTr("Installing nvidia-%1").arg(controller.best_version)
                 font.pixelSize: 20
                 font.bold: true
                 Layout.alignment: Qt.AlignHCenter
@@ -64,26 +65,22 @@ Item {
 
                     StepItem {
                         text: qsTr("Downloading packages")
-                        status: controller.install_progress >= 30 ? "done" : 
-                               controller.install_progress >= 10 ? "running" : "pending"
+                        status: controller.install_progress >= 30 ? "done" : controller.install_progress >= 10 ? "running" : "pending"
                     }
 
                     StepItem {
                         text: qsTr("Installing drivers")
-                        status: controller.install_progress >= 60 ? "done" : 
-                               controller.install_progress >= 30 ? "running" : "pending"
+                        status: controller.install_progress >= 60 ? "done" : controller.install_progress >= 30 ? "running" : "pending"
                     }
 
                     StepItem {
                         text: qsTr("Building kernel module")
-                        status: controller.install_progress >= 80 ? "done" : 
-                               controller.install_progress >= 60 ? "running" : "pending"
+                        status: controller.install_progress >= 80 ? "done" : controller.install_progress >= 60 ? "running" : "pending"
                     }
 
                     StepItem {
                         text: qsTr("Running dracut")
-                        status: controller.install_progress >= 100 ? "done" : 
-                               controller.install_progress >= 80 ? "running" : "pending"
+                        status: controller.install_progress >= 100 ? "done" : controller.install_progress >= 80 ? "running" : "pending"
                     }
                 }
             }
@@ -108,7 +105,7 @@ Item {
 
                         // Auto-scroll to bottom
                         onTextChanged: {
-                            logArea.cursorPosition = logArea.length
+                            logArea.cursorPosition = logArea.length;
                         }
                     }
                 }
@@ -152,7 +149,9 @@ Item {
                 }
             }
 
-            Item { Layout.preferredHeight: 20 }
+            Item {
+                Layout.preferredHeight: 20
+            }
         }
     }
 
@@ -171,7 +170,7 @@ Item {
 
         onAccepted: {
             // TODO: implement cancel logic
-            progressPage.finished()
+            progressPage.finished();
         }
     }
 }

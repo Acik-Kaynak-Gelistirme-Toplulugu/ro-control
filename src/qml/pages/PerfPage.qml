@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
+import "../components"
 import io.github.AcikKaynakGelistirmeToplulugu.rocontrol
 
 // Performance Monitor — Live GPU/CPU/RAM stats + system info
@@ -14,10 +15,10 @@ Item {
     // Load system info once when page becomes visible
     onVisibleChanged: {
         if (visible) {
-            monitor.load_system_info()
-            refreshTimer.start()
+            monitor.load_system_info();
+            refreshTimer.start();
         } else {
-            refreshTimer.stop()
+            refreshTimer.stop();
         }
     }
 
@@ -38,7 +39,9 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 16
 
-            Item { Layout.preferredHeight: 24 }
+            Item {
+                Layout.preferredHeight: 24
+            }
 
             // ─── System Information ───
             Controls.GroupBox {
@@ -51,23 +54,54 @@ Item {
                     rowSpacing: 6
                     anchors.fill: parent
 
-                    Controls.Label { text: qsTr("OS:"); opacity: 0.6 }
-                    Controls.Label { text: monitor.distro; Layout.fillWidth: true }
+                    Controls.Label {
+                        text: qsTr("OS:")
+                        opacity: 0.6
+                    }
+                    Controls.Label {
+                        text: monitor.distro
+                        Layout.fillWidth: true
+                    }
 
-                    Controls.Label { text: qsTr("Kernel:"); opacity: 0.6 }
-                    Controls.Label { text: monitor.kernel }
+                    Controls.Label {
+                        text: qsTr("Kernel:")
+                        opacity: 0.6
+                    }
+                    Controls.Label {
+                        text: monitor.kernel
+                    }
 
-                    Controls.Label { text: qsTr("CPU:"); opacity: 0.6 }
-                    Controls.Label { text: monitor.cpu_name }
+                    Controls.Label {
+                        text: qsTr("CPU:")
+                        opacity: 0.6
+                    }
+                    Controls.Label {
+                        text: monitor.cpu_name
+                    }
 
-                    Controls.Label { text: qsTr("RAM:"); opacity: 0.6 }
-                    Controls.Label { text: monitor.ram_info }
+                    Controls.Label {
+                        text: qsTr("RAM:")
+                        opacity: 0.6
+                    }
+                    Controls.Label {
+                        text: monitor.ram_info
+                    }
 
-                    Controls.Label { text: qsTr("GPU:"); opacity: 0.6 }
-                    Controls.Label { text: monitor.gpu_full_name }
+                    Controls.Label {
+                        text: qsTr("GPU:")
+                        opacity: 0.6
+                    }
+                    Controls.Label {
+                        text: monitor.gpu_full_name
+                    }
 
-                    Controls.Label { text: qsTr("Display:"); opacity: 0.6 }
-                    Controls.Label { text: monitor.display_server }
+                    Controls.Label {
+                        text: qsTr("Display:")
+                        opacity: 0.6
+                    }
+                    Controls.Label {
+                        text: monitor.display_server
+                    }
                 }
             }
 
@@ -95,9 +129,7 @@ Item {
                     StatRow {
                         label: qsTr("VRAM")
                         value: monitor.gpu_mem_used + " / " + monitor.gpu_mem_total + " MB"
-                        fraction: monitor.gpu_mem_total > 0
-                            ? monitor.gpu_mem_used / monitor.gpu_mem_total
-                            : 0
+                        fraction: monitor.gpu_mem_total > 0 ? monitor.gpu_mem_used / monitor.gpu_mem_total : 0
                     }
                 }
             }
@@ -126,14 +158,14 @@ Item {
                     StatRow {
                         label: qsTr("RAM")
                         value: monitor.ram_used + " / " + monitor.ram_total + " MB"
-                        fraction: monitor.ram_total > 0
-                            ? monitor.ram_used / monitor.ram_total
-                            : 0
+                        fraction: monitor.ram_total > 0 ? monitor.ram_used / monitor.ram_total : 0
                     }
                 }
             }
 
-            Item { Layout.preferredHeight: 20 }
+            Item {
+                Layout.preferredHeight: 20
+            }
         }
     }
 }

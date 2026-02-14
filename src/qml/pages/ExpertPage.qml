@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
+import "../components"
 import io.github.AcikKaynakGelistirmeToplulugu.rocontrol
 
 // Expert Page — Manual driver version selection
@@ -10,8 +11,8 @@ Item {
     id: expertPage
 
     required property var controller
-    signal showProgress()
-    signal goBack()
+    signal showProgress
+    signal goBack
 
     property string selectedVersion: ""
     property bool useOpenKernel: false
@@ -19,9 +20,10 @@ Item {
 
     // Parse versions from controller
     property var versionList: {
-        var raw = controller.get_available_versions()
-        if (raw.length === 0) return []
-        return raw.split(",")
+        var raw = controller.get_available_versions();
+        if (raw.length === 0)
+            return [];
+        return raw.split(",");
     }
 
     Controls.ScrollView {
@@ -32,7 +34,9 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 16
 
-            Item { Layout.preferredHeight: 24 }
+            Item {
+                Layout.preferredHeight: 24
+            }
 
             // ─── Header ───
             RowLayout {
@@ -74,14 +78,14 @@ Item {
                         VersionRow {
                             required property string modelData
                             required property int index
-                            
+
                             version: modelData
                             statusText: index === 0 ? qsTr("Latest Stable") : ""
                             status: index === 0 ? "available" : "available"
                             selected: expertPage.selectedVersion === modelData
-                            
+
                             onClicked: expertPage.selectedVersion = modelData
-                            
+
                             Layout.fillWidth: true
                         }
                     }
@@ -136,8 +140,8 @@ Item {
                     highlighted: true
                     Layout.fillWidth: true
                     onClicked: {
-                        controller.install_custom(expertPage.selectedVersion, expertPage.useOpenKernel)
-                        expertPage.showProgress()
+                        controller.install_custom(expertPage.selectedVersion, expertPage.useOpenKernel);
+                        expertPage.showProgress();
                     }
                 }
 
@@ -149,7 +153,9 @@ Item {
                 }
             }
 
-            Item { Layout.preferredHeight: 20 }
+            Item {
+                Layout.preferredHeight: 20
+            }
         }
     }
 
@@ -175,8 +181,8 @@ Item {
         }
 
         onAccepted: {
-            controller.remove_drivers(expertPage.deepClean)
-            expertPage.showProgress()
+            controller.remove_drivers(expertPage.deepClean);
+            expertPage.showProgress();
         }
     }
 }

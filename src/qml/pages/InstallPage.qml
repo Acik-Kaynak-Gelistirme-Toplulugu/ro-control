@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
+import "../components"
 import io.github.AcikKaynakGelistirmeToplulugu.rocontrol
 
 // Install Page — Express & Custom install options
@@ -10,8 +11,8 @@ Item {
     id: installPage
 
     required property var controller
-    signal showExpert()
-    signal showProgress()
+    signal showExpert
+    signal showProgress
 
     Controls.ScrollView {
         anchors.fill: parent
@@ -21,7 +22,9 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 16
 
-            Item { Layout.preferredHeight: 40 }
+            Item {
+                Layout.preferredHeight: 40
+            }
 
             // ─── Hero Section ───
             ColumnLayout {
@@ -49,7 +52,9 @@ Item {
                 }
             }
 
-            Item { Layout.preferredHeight: 12 }
+            Item {
+                Layout.preferredHeight: 12
+            }
 
             // ─── No Internet Warning ───
             WarningBanner {
@@ -71,14 +76,12 @@ Item {
             ActionCard {
                 Layout.fillWidth: true
                 enabled: controller.has_internet
-                
+
                 title: qsTr("Express Install (Recommended)")
-                description: controller.is_up_to_date
-                    ? qsTr("✓ Driver is up to date (%1)").arg(controller.best_version)
-                    : qsTr("Install nvidia-%1 — Compatible ✓").arg(controller.best_version)
+                description: controller.is_up_to_date ? qsTr("✓ Driver is up to date (%1)").arg(controller.best_version) : qsTr("Install nvidia-%1 — Compatible ✓").arg(controller.best_version)
                 icon: "✓"
                 accentColor: palette.highlight
-                
+
                 onClicked: installPage.showProgress()
             }
 
@@ -86,16 +89,18 @@ Item {
             ActionCard {
                 Layout.fillWidth: true
                 enabled: true
-                
+
                 title: qsTr("Custom Install (Expert)")
                 description: qsTr("Choose version, kernel module, and cleanup options")
                 icon: "⚙"
                 accentColor: palette.mid
-                
+
                 onClicked: installPage.showExpert()
             }
 
-            Item { Layout.preferredHeight: 20 }
+            Item {
+                Layout.preferredHeight: 20
+            }
         }
     }
 }

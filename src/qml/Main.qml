@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
+import "." as AppTheme
+import "pages"
 import io.github.AcikKaynakGelistirmeToplulugu.rocontrol
 
 Controls.ApplicationWindow {
@@ -13,15 +15,17 @@ Controls.ApplicationWindow {
     visible: true
 
     // Set application background via Theme
-    background: Rectangle { color: Theme.background }
-    color: Theme.background
+    background: Rectangle {
+        color: AppTheme.Theme.background
+    }
+    color: AppTheme.Theme.background
 
     // --- Backend objects ---
     GpuController {
         id: gpuController
         Component.onCompleted: {
-            check_network()
-            detect_gpu()
+            check_network();
+            detect_gpu();
         }
     }
 
@@ -39,13 +43,13 @@ Controls.ApplicationWindow {
             id: sidebar
             Layout.preferredWidth: 200
             Layout.fillHeight: true
-            color: Theme.sidebar
+            color: AppTheme.Theme.sidebar
 
             Rectangle {
                 anchors.right: parent.right
                 width: 1
                 height: parent.height
-                color: Theme.border
+                color: AppTheme.Theme.border
                 opacity: 0.5
             }
 
@@ -57,54 +61,59 @@ Controls.ApplicationWindow {
                 // App title
                 Controls.Label {
                     text: "ro-Control"
-                    font: Theme.fontH3
-                    color: Theme.foreground
+                    font: AppTheme.Theme.fontH3
+                    color: AppTheme.Theme.foreground
                     Layout.bottomMargin: 16
                 }
 
                 // Nav buttons
                 Repeater {
                     model: [
-                        { label: qsTr("Install"),  icon: "download",                   idx: 0 },
-                        { label: qsTr("Expert"),   icon: "configure",                   idx: 1 },
-                        { label: qsTr("Monitor"),  icon: "utilities-system-monitor",    idx: 2 }
+                        {
+                            label: qsTr("Install"),
+                            icon: "download",
+                            idx: 0
+                        },
+                        {
+                            label: qsTr("Expert"),
+                            icon: "configure",
+                            idx: 1
+                        },
+                        {
+                            label: qsTr("Monitor"),
+                            icon: "utilities-system-monitor",
+                            idx: 2
+                        }
                     ]
 
                     Controls.Button {
                         required property var modelData
-                        
+
                         text: modelData.label
                         icon.name: modelData.icon
-                        
+
                         Layout.fillWidth: true
                         flat: contentStack.currentIndex !== modelData.idx
                         highlighted: contentStack.currentIndex === modelData.idx
-                        
-        contentItem: Controls.IconLabel {
-                            text: parent.text
-                            icon: parent.icon
-                            color: parent.highlighted ? Theme.primaryForeground : Theme.foreground
-                            display: Controls.AbstractButton.TextBesideIcon
-                            alignment: Qt.AlignLeft
-                            spacing: 8
-                        }
 
                         background: Rectangle {
-                            color: parent.highlighted ? Theme.primary : "transparent"
-                            radius: Theme.radiusSm
+                            color: parent.highlighted ? AppTheme.Theme.primary : "transparent"
+                            radius: AppTheme.Theme.radiusSm
                         }
 
                         onClicked: contentStack.currentIndex = modelData.idx
                     }
                 }
 
-                Item { Layout.fillHeight: true }
+                Item {
+                    Layout.fillHeight: true
+                }
 
                 // Status info
                 Controls.Label {
                     visible: gpuController.secure_boot
                     text: "⚠ Secure Boot ON"
-                    color: Theme.warning
+                    color: AppTheme.Theme.warning
                     font.pixelSize: 11
                 }
 
@@ -112,13 +121,13 @@ Controls.ApplicationWindow {
                     text: "v" + "1.0.0"
                     opacity: 0.4
                     font.pixelSize: 11
-                    color: Theme.mutedForeground
+                    color: AppTheme.Theme.mutedForeground
                 }
             }
         }
 
         // ─── Content Area ───
-        Controls.StackLayout {
+        StackLayout {
             id: contentStack
             Layout.fillWidth: true
             Layout.fillHeight: true
