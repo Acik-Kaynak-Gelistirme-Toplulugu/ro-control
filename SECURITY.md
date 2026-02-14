@@ -12,7 +12,7 @@
 If you discover a security vulnerability in ro-Control, please report it responsibly:
 
 1. **Do NOT open a public GitHub issue.**
-2. Send an email to **info@akgt.dev** with:
+2. Send an email to **<info@akgt.dev>** with:
    - A description of the vulnerability
    - Steps to reproduce
    - Potential impact assessment
@@ -33,6 +33,7 @@ ro-Control uses PolicyKit (`pkexec`) for privilege escalation. The privileged he
 ## Scope
 
 The following are considered in scope:
+
 - Privilege escalation bypasses in `ro-control-root-task`
 - Command injection via QML ↔ Rust bridge
 - Unsafe handling of user-supplied data (file paths, version strings)
