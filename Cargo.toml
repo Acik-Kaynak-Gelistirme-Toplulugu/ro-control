@@ -2,7 +2,7 @@
 name = "ro-control"
 version = "1.0.0"
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.82"
 authors = ["Açık Kaynak Geliştirme Topluluğu <info@akgt.dev>"]
 description = "Smart GPU driver manager for Linux — install, configure and monitor NVIDIA graphics drivers"
 license = "GPL-3.0-or-later"

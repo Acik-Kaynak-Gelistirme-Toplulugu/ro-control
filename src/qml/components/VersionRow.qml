@@ -19,7 +19,7 @@ Rectangle {
     property bool selected: false
     property bool darkMode: false
 
-    color: mouseArea.containsMouse ? (darkMode ? "#313d4d" : "#eef1f4") : "transparent"
+    color: mouseArea.containsMouse ? (versionRow.darkMode ? "#313d4d" : "#eef1f4") : "transparent"
 
     Behavior on color {
         ColorAnimation {
@@ -51,7 +51,7 @@ Rectangle {
             radius: 9
             color: "transparent"
             border.width: 2
-            border.color: versionRow.selected ? "#35a3df" : (darkMode ? "#9eadbf" : "#77818b")
+            border.color: versionRow.selected ? "#35a3df" : (versionRow.darkMode ? "#9eadbf" : "#77818b")
 
             Controls.Label {
                 anchors.centerIn: parent
@@ -71,14 +71,14 @@ Rectangle {
                 text: versionRow.version
                 font.bold: true
                 font.pixelSize: 16
-                color: darkMode ? "#eef3f9" : "#2d3136"
+                color: versionRow.darkMode ? "#eef3f9" : "#2d3136"
             }
 
             Controls.Label {
                 text: versionRow.statusText
                 font.pixelSize: 14
                 opacity: 0.9
-                color: darkMode ? "#aeb8c4" : "#77818b"
+                color: versionRow.darkMode ? "#aeb8c4" : "#77818b"
             }
         }
 

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
@@ -14,8 +15,8 @@ Item {
     required property bool darkMode
     signal finished
 
-    readonly property color textColor: darkMode ? "#eef3f9" : "#2d3136"
-    readonly property color mutedColor: darkMode ? "#aeb8c4" : "#77818b"
+    readonly property color textColor: progressPage.darkMode ? "#eef3f9" : "#2d3136"
+    readonly property color mutedColor: progressPage.darkMode ? "#aeb8c4" : "#77818b"
 
     Controls.ScrollView {
         anchors.fill: parent
@@ -31,11 +32,11 @@ Item {
 
             // ─── Title ───
             Controls.Label {
-                text: controller.current_status === "removing" ? qsTr("Removing Drivers...") : qsTr("Installing nvidia-%1").arg(controller.best_version)
+                text: progressPage.controller.current_status === "removing" ? qsTr("Removing Drivers...") : qsTr("Installing nvidia-%1").arg(progressPage.controller.best_version)
                 font.pixelSize: 42
                 font.weight: Font.DemiBold
                 Layout.alignment: Qt.AlignHCenter
-                color: textColor
+                color: progressPage.textColor
             }
 
             RowLayout {
@@ -46,16 +47,16 @@ Item {
                     Layout.fillWidth: true
                     from: 0
                     to: 100
-                    value: controller.install_progress
-                    indeterminate: controller.install_progress === 0 && controller.is_installing
+                    value: progressPage.controller.install_progress
+                    indeterminate: progressPage.controller.install_progress === 0 && progressPage.controller.is_installing
                 }
 
                 Controls.Label {
-                    text: controller.install_progress + "%"
+                    text: progressPage.controller.install_progress + "%"
                     opacity: 0.8
                     font.pixelSize: 28
                     font.weight: Font.DemiBold
-                    color: mutedColor
+                    color: progressPage.mutedColor
                     Layout.preferredWidth: 62
                     horizontalAlignment: Text.AlignRight
                 }
@@ -63,7 +64,7 @@ Item {
 
             // ─── Installation Steps ───
             Controls.GroupBox {
-                visible: controller.is_installing
+                visible: progressPage.controller.is_installing
                 Layout.fillWidth: true
                 title: qsTr("Installation Steps")
 
@@ -73,31 +74,31 @@ Item {
 
                     StepItem {
                         text: qsTr("Checking compatibility")
-                        status: controller.install_progress >= 10 ? "done" : "pending"
+                        status: progressPage.controller.install_progress >= 10 ? "done" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Downloading packages")
-                        status: controller.install_progress >= 30 ? "done" : controller.install_progress >= 10 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 30 ? "done" : progressPage.controller.install_progress >= 10 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Installing drivers")
-                        status: controller.install_progress >= 60 ? "done" : controller.install_progress >= 30 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 60 ? "done" : progressPage.controller.install_progress >= 30 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Building kernel module")
-                        status: controller.install_progress >= 80 ? "done" : controller.install_progress >= 60 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 80 ? "done" : progressPage.controller.install_progress >= 60 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Running dracut")
-                        status: controller.install_progress >= 100 ? "done" : controller.install_progress >= 80 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 100 ? "done" : progressPage.controller.install_progress >= 80 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
                 }
@@ -116,42 +117,42 @@ Item {
 
                     StepItem {
                         text: qsTr("Checking compatibility...")
-                        status: controller.install_progress >= 10 ? "done" : "pending"
+                        status: progressPage.controller.install_progress >= 10 ? "done" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Downloading packages...")
-                        status: controller.install_progress >= 30 ? "done" : controller.install_progress >= 10 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 30 ? "done" : progressPage.controller.install_progress >= 10 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Installing akmod-nvidia...")
-                        status: controller.install_progress >= 60 ? "done" : controller.install_progress >= 30 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 60 ? "done" : progressPage.controller.install_progress >= 30 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Building kernel module...")
-                        status: controller.install_progress >= 80 ? "done" : controller.install_progress >= 60 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 80 ? "done" : progressPage.controller.install_progress >= 60 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Running dracut...")
-                        status: controller.install_progress >= 100 ? "done" : controller.install_progress >= 80 ? "running" : "pending"
+                        status: progressPage.controller.install_progress >= 100 ? "done" : progressPage.controller.install_progress >= 80 ? "running" : "pending"
                         darkMode: progressPage.darkMode
                     }
                 }
             }
 
             Rectangle {
-                visible: controller.is_installing
+                visible: progressPage.controller.is_installing
                 Layout.fillWidth: true
                 implicitHeight: 58
                 radius: 8
-                color: darkMode ? "#3a2e1f" : "#fef4e8"
+                color: progressPage.darkMode ? "#3a2e1f" : "#fef4e8"
                 border.width: 1
                 border.color: "#f59f23"
 
@@ -172,7 +173,7 @@ Item {
                 spacing: 0
 
                 Controls.Button {
-                    visible: controller.is_installing
+                    visible: progressPage.controller.is_installing
                     text: qsTr("Cancel")
                     Layout.alignment: Qt.AlignHCenter
                     Layout.preferredWidth: 100
@@ -180,7 +181,7 @@ Item {
                 }
 
                 Controls.Button {
-                    visible: !controller.is_installing
+                    visible: !progressPage.controller.is_installing
                     text: qsTr("Done")
                     highlighted: true
                     Layout.fillWidth: true
@@ -188,7 +189,7 @@ Item {
                 }
 
                 Controls.Button {
-                    visible: !controller.is_installing && controller.install_progress >= 100
+                    visible: !progressPage.controller.is_installing && progressPage.controller.install_progress >= 100
                     text: qsTr("Reboot Now")
                     icon.name: "system-reboot"
                     highlighted: true

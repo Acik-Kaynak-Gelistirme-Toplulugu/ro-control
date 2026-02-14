@@ -52,7 +52,7 @@ RowLayout {
     Controls.Label {
         text: stepItem.text
         opacity: stepItem.status === "done" ? 0.85 : (stepItem.status === "error" ? 1.0 : 0.9)
-        color: stepItem.status === "error" ? stepItem.statusColor : (darkMode ? "#eef3f9" : "#2d3136")
+        color: stepItem.status === "error" ? stepItem.statusColor : (stepItem.darkMode ? "#eef3f9" : "#2d3136")
         font.family: "Monaco"
         font.pixelSize: 15
         Layout.fillWidth: true

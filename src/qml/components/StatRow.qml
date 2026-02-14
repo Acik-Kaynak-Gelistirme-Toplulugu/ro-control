@@ -19,7 +19,7 @@ RowLayout {
     Controls.Label {
         text: statRow.label
         opacity: 0.95
-        color: darkMode ? "#eef3f9" : "#2d3136"
+        color: statRow.darkMode ? "#eef3f9" : "#2d3136"
         font.pixelSize: 16
         Layout.preferredWidth: 90
     }
@@ -33,7 +33,7 @@ RowLayout {
         background: Rectangle {
             implicitHeight: 8
             radius: 4
-            color: darkMode ? "#18212b" : "#dfe3e8"
+            color: statRow.darkMode ? "#18212b" : "#dfe3e8"
         }
 
         contentItem: Item {
@@ -52,7 +52,7 @@ RowLayout {
         text: statRow.value
         font.pixelSize: 16
         opacity: 0.95
-        color: darkMode ? "#aeb8c4" : "#77818b"
+        color: statRow.darkMode ? "#aeb8c4" : "#77818b"
         Layout.preferredWidth: 80
         horizontalAlignment: Text.AlignRight
     }

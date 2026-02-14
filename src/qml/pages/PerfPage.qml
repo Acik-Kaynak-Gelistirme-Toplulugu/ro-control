@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
@@ -13,13 +14,13 @@ Item {
     required property var monitor
     required property bool darkMode
 
-    readonly property color textColor: darkMode ? "#eef3f9" : "#2d3136"
-    readonly property color mutedColor: darkMode ? "#aeb8c4" : "#77818b"
+    readonly property color textColor: perfPage.darkMode ? "#eef3f9" : "#2d3136"
+    readonly property color mutedColor: perfPage.darkMode ? "#aeb8c4" : "#77818b"
 
     // Load system info once when page becomes visible
     onVisibleChanged: {
         if (visible) {
-            monitor.load_system_info();
+            perfPage.monitor.load_system_info();
             refreshTimer.start();
         } else {
             refreshTimer.stop();
@@ -32,7 +33,7 @@ Item {
         interval: 2000
         repeat: true
         running: false
-        onTriggered: monitor.refresh()
+        onTriggered: perfPage.monitor.refresh()
     }
 
     Controls.ScrollView {
@@ -60,74 +61,74 @@ Item {
 
                     Controls.Label {
                         text: qsTr("OS:")
-                        color: mutedColor
+                        color: perfPage.mutedColor
                     }
                     Controls.Label {
-                        text: monitor.distro
+                        text: perfPage.monitor.distro
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignRight
                         font.weight: Font.DemiBold
-                        color: textColor
+                        color: perfPage.textColor
                     }
 
                     Controls.Label {
                         text: qsTr("Kernel:")
-                        color: mutedColor
+                        color: perfPage.mutedColor
                     }
                     Controls.Label {
-                        text: monitor.kernel
+                        text: perfPage.monitor.kernel
                         horizontalAlignment: Text.AlignRight
                         Layout.fillWidth: true
                         font.weight: Font.DemiBold
-                        color: textColor
+                        color: perfPage.textColor
                     }
 
                     Controls.Label {
                         text: qsTr("CPU:")
-                        color: mutedColor
+                        color: perfPage.mutedColor
                     }
                     Controls.Label {
-                        text: monitor.cpu_name
+                        text: perfPage.monitor.cpu_name
                         horizontalAlignment: Text.AlignRight
                         Layout.fillWidth: true
                         font.weight: Font.DemiBold
-                        color: textColor
+                        color: perfPage.textColor
                     }
 
                     Controls.Label {
                         text: qsTr("RAM:")
-                        color: mutedColor
+                        color: perfPage.mutedColor
                     }
                     Controls.Label {
-                        text: monitor.ram_info
+                        text: perfPage.monitor.ram_info
                         horizontalAlignment: Text.AlignRight
                         Layout.fillWidth: true
                         font.weight: Font.DemiBold
-                        color: textColor
+                        color: perfPage.textColor
                     }
 
                     Controls.Label {
                         text: qsTr("GPU:")
-                        color: mutedColor
+                        color: perfPage.mutedColor
                     }
                     Controls.Label {
-                        text: monitor.gpu_full_name
+                        text: perfPage.monitor.gpu_full_name
                         horizontalAlignment: Text.AlignRight
                         Layout.fillWidth: true
                         font.weight: Font.DemiBold
-                        color: textColor
+                        color: perfPage.textColor
                     }
 
                     Controls.Label {
                         text: qsTr("Display:")
-                        color: mutedColor
+                        color: perfPage.mutedColor
                     }
                     Controls.Label {
-                        text: monitor.display_server
+                        text: perfPage.monitor.display_server
                         horizontalAlignment: Text.AlignRight
                         Layout.fillWidth: true
                         font.weight: Font.DemiBold
-                        color: textColor
+                        color: perfPage.textColor
                     }
                 }
             }
@@ -143,22 +144,22 @@ Item {
 
                     StatRow {
                         label: qsTr("Temperature")
-                        value: monitor.gpu_temp + " °C"
-                        fraction: monitor.gpu_temp / 100.0
+                        value: perfPage.monitor.gpu_temp + " °C"
+                        fraction: perfPage.monitor.gpu_temp / 100.0
                         darkMode: perfPage.darkMode
                     }
 
                     StatRow {
                         label: qsTr("Load")
-                        value: monitor.gpu_load + " %"
-                        fraction: monitor.gpu_load / 100.0
+                        value: perfPage.monitor.gpu_load + " %"
+                        fraction: perfPage.monitor.gpu_load / 100.0
                         darkMode: perfPage.darkMode
                     }
 
                     StatRow {
                         label: qsTr("VRAM")
-                        value: monitor.gpu_mem_used + " / " + monitor.gpu_mem_total + " MB"
-                        fraction: monitor.gpu_mem_total > 0 ? monitor.gpu_mem_used / monitor.gpu_mem_total : 0
+                        value: perfPage.monitor.gpu_mem_used + " / " + perfPage.monitor.gpu_mem_total + " MB"
+                        fraction: perfPage.monitor.gpu_mem_total > 0 ? perfPage.monitor.gpu_mem_used / perfPage.monitor.gpu_mem_total : 0
                         darkMode: perfPage.darkMode
                     }
                 }
@@ -175,22 +176,22 @@ Item {
 
                     StatRow {
                         label: qsTr("CPU Load")
-                        value: monitor.cpu_load + " %"
-                        fraction: monitor.cpu_load / 100.0
+                        value: perfPage.monitor.cpu_load + " %"
+                        fraction: perfPage.monitor.cpu_load / 100.0
                         darkMode: perfPage.darkMode
                     }
 
                     StatRow {
                         label: qsTr("CPU Temp")
-                        value: monitor.cpu_temp + " °C"
-                        fraction: monitor.cpu_temp / 100.0
+                        value: perfPage.monitor.cpu_temp + " °C"
+                        fraction: perfPage.monitor.cpu_temp / 100.0
                         darkMode: perfPage.darkMode
                     }
 
                     StatRow {
                         label: qsTr("RAM")
-                        value: monitor.ram_used + " / " + monitor.ram_total + " MB"
-                        fraction: monitor.ram_total > 0 ? monitor.ram_used / monitor.ram_total : 0
+                        value: perfPage.monitor.ram_used + " / " + perfPage.monitor.ram_total + " MB"
+                        fraction: perfPage.monitor.ram_total > 0 ? perfPage.monitor.ram_used / perfPage.monitor.ram_total : 0
                         darkMode: perfPage.darkMode
                     }
                 }

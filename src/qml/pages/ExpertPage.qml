@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
@@ -17,13 +18,13 @@ Item {
     property bool deepClean: false
     property var officialVersions: []
 
-    readonly property color textColor: darkMode ? "#eef3f9" : "#2d3136"
-    readonly property color mutedColor: darkMode ? "#aeb8c4" : "#77818b"
-    readonly property color cardColor: darkMode ? "#2a333f" : "#f5f6f8"
-    readonly property color borderColor: darkMode ? "#3b4655" : "#c8ced6"
+    readonly property color textColor: expertPage.darkMode ? "#eef3f9" : "#2d3136"
+    readonly property color mutedColor: expertPage.darkMode ? "#aeb8c4" : "#77818b"
+    readonly property color cardColor: expertPage.darkMode ? "#2a333f" : "#f5f6f8"
+    readonly property color borderColor: expertPage.darkMode ? "#3b4655" : "#c8ced6"
 
     property var versionList: {
-        var raw = controller.get_available_versions();
+        var raw = expertPage.controller.get_available_versions();
         if (raw.length === 0)
             return [];
         return raw.split(",");
@@ -43,7 +44,7 @@ Item {
 
     function refreshOfficialVersions() {
         try {
-            var raw = controller.get_official_versions_with_changes();
+            var raw = expertPage.controller.get_official_versions_with_changes();
             var parsed = JSON.parse(raw);
             officialVersions = parsed;
         } catch (e) {
@@ -72,16 +73,16 @@ Item {
                 text: qsTr("Expert Driver Management")
                 font.pixelSize: 20
                 font.weight: Font.DemiBold
-                color: textColor
+                color: expertPage.textColor
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: 78
                 radius: 8
-                color: cardColor
+                color: expertPage.cardColor
                 border.width: 1
-                border.color: borderColor
+                border.color: expertPage.borderColor
 
                 GridLayout {
                     anchors.fill: parent
@@ -92,12 +93,12 @@ Item {
 
                     Controls.Label {
                         text: qsTr("Current:")
-                        color: mutedColor
+                        color: expertPage.mutedColor
                         font.pixelSize: 14
                     }
                     Controls.Label {
-                        text: controller.driver_in_use.length > 0 ? controller.driver_in_use : "nvidia-555.42 (proprietary)"
-                        color: textColor
+                        text: expertPage.controller.driver_in_use.length > 0 ? expertPage.controller.driver_in_use : "nvidia-555.42 (proprietary)"
+                        color: expertPage.textColor
                         horizontalAlignment: Text.AlignRight
                         Layout.fillWidth: true
                         font.pixelSize: 14
@@ -106,12 +107,12 @@ Item {
 
                     Controls.Label {
                         text: qsTr("Kernel:")
-                        color: mutedColor
+                        color: expertPage.mutedColor
                         font.pixelSize: 14
                     }
                     Controls.Label {
                         text: "6.8.12-300.fc40.x86_64"
-                        color: textColor
+                        color: expertPage.textColor
                         horizontalAlignment: Text.AlignRight
                         Layout.fillWidth: true
                         font.pixelSize: 14
@@ -137,7 +138,7 @@ Item {
 
                             version: typeof modelData === "string" ? modelData : modelData.version
                             statusText: typeof modelData === "string" ? (index === 0 ? qsTr("Latest Stable") : "") : modelData.changes
-                            status: (typeof modelData === "string" ? modelData : modelData.version) === controller.driver_in_use ? "installed" : "available"
+                            status: (typeof modelData === "string" ? modelData : modelData.version) === expertPage.controller.driver_in_use ? "installed" : "available"
                             selected: expertPage.selectedVersion === (typeof modelData === "string" ? modelData : modelData.version)
                             darkMode: expertPage.darkMode
 
@@ -160,7 +161,7 @@ Item {
 
             Controls.Label {
                 text: qsTr("Versions are checked from official repository metadata and include available changelog summaries.")
-                color: mutedColor
+                color: expertPage.mutedColor
                 font.pixelSize: 12
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -206,7 +207,7 @@ Item {
                     palette.button: "#35a3df"
                     palette.buttonText: "#ffffff"
                     onClicked: {
-                        controller.install_custom(expertPage.selectedVersion, expertPage.useOpenKernel);
+                        expertPage.controller.install_custom(expertPage.selectedVersion, expertPage.useOpenKernel);
                         expertPage.showProgress();
                     }
                 }
@@ -248,7 +249,7 @@ Item {
         }
 
         onAccepted: {
-            controller.remove_drivers(expertPage.deepClean);
+            expertPage.controller.remove_drivers(expertPage.deepClean);
             expertPage.showProgress();
         }
     }

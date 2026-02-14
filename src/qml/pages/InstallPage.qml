@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
@@ -15,10 +16,10 @@ Item {
     signal showExpert
     signal showProgress
 
-    readonly property color textColor: darkMode ? "#eef3f9" : "#2d3136"
-    readonly property color mutedColor: darkMode ? "#aeb8c4" : "#77818b"
-    readonly property color cardColor: darkMode ? "#2a333f" : "#f5f6f8"
-    readonly property color borderColor: darkMode ? "#3b4655" : "#c8ced6"
+    readonly property color textColor: installPage.darkMode ? "#eef3f9" : "#2d3136"
+    readonly property color mutedColor: installPage.darkMode ? "#aeb8c4" : "#77818b"
+    readonly property color cardColor: installPage.darkMode ? "#2a333f" : "#f5f6f8"
+    readonly property color borderColor: installPage.darkMode ? "#3b4655" : "#c8ced6"
 
     Controls.ScrollView {
         anchors.fill: parent
@@ -41,7 +42,7 @@ Item {
                     width: 58
                     height: 58
                     radius: 29
-                    color: darkMode ? "#173447" : "#d8edf7"
+                    color: installPage.darkMode ? "#173447" : "#d8edf7"
                     Layout.alignment: Qt.AlignHCenter
 
                     Controls.Label {
@@ -57,14 +58,14 @@ Item {
                     font.pixelSize: 40
                     font.weight: Font.DemiBold
                     Layout.alignment: Qt.AlignHCenter
-                    color: textColor
+                    color: installPage.textColor
                 }
 
                 Controls.Label {
                     text: qsTr("Optimized options for your hardware")
                     opacity: 0.8
                     font.pixelSize: 16
-                    color: mutedColor
+                    color: installPage.mutedColor
                     Layout.alignment: Qt.AlignHCenter
                 }
             }
@@ -75,7 +76,7 @@ Item {
 
             // ─── No Internet Warning ───
             WarningBanner {
-                visible: !controller.has_internet
+                visible: !installPage.controller.has_internet
                 type: "warning"
                 text: qsTr("Internet connection required for driver download")
                 Layout.fillWidth: true
@@ -83,7 +84,7 @@ Item {
 
             // ─── Secure Boot Warning ───
             WarningBanner {
-                visible: controller.secure_boot
+                visible: installPage.controller.secure_boot
                 type: "error"
                 text: qsTr("Secure Boot is enabled — unsigned drivers may not work. Disable it in UEFI to proceed.")
                 Layout.fillWidth: true
@@ -94,13 +95,13 @@ Item {
                 Layout.fillWidth: true
                 implicitHeight: 116
                 radius: 8
-                color: cardColor
+                color: installPage.cardColor
                 border.width: 1
-                border.color: borderColor
+                border.color: installPage.borderColor
 
                 MouseArea {
                     anchors.fill: parent
-                    enabled: controller.has_internet
+                    enabled: installPage.controller.has_internet
                     cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                     onClicked: installPage.showProgress()
                 }
@@ -125,12 +126,12 @@ Item {
                             text: qsTr("Express Install (Recommended)")
                             font.pixelSize: 16
                             font.weight: Font.DemiBold
-                            color: textColor
+                            color: installPage.textColor
                         }
 
                         Controls.Label {
-                            text: qsTr("Installs nvidia-%1").arg(controller.best_version.length > 0 ? controller.best_version : "560.35.03")
-                            color: mutedColor
+                            text: qsTr("Installs nvidia-%1").arg(installPage.controller.best_version.length > 0 ? installPage.controller.best_version : "560.35.03")
+                            color: installPage.mutedColor
                             font.pixelSize: 14
                         }
 
@@ -149,9 +150,9 @@ Item {
                 Layout.fillWidth: true
                 implicitHeight: 98
                 radius: 8
-                color: cardColor
+                color: installPage.cardColor
                 border.width: 1
-                border.color: borderColor
+                border.color: installPage.borderColor
 
                 MouseArea {
                     anchors.fill: parent
@@ -179,12 +180,12 @@ Item {
                             text: qsTr("Custom Install (Expert)")
                             font.pixelSize: 16
                             font.weight: Font.DemiBold
-                            color: textColor
+                            color: installPage.textColor
                         }
 
                         Controls.Label {
                             text: qsTr("Choose version, kernel module")
-                            color: mutedColor
+                            color: installPage.mutedColor
                             font.pixelSize: 14
                         }
                     }
@@ -192,11 +193,11 @@ Item {
             }
 
             Rectangle {
-                visible: controller.secure_boot
+                visible: installPage.controller.secure_boot
                 Layout.fillWidth: true
                 implicitHeight: 96
                 radius: 8
-                color: darkMode ? "#3a2e1f" : "#fef4e8"
+                color: installPage.darkMode ? "#3a2e1f" : "#fef4e8"
                 border.width: 1
                 border.color: "#f59f23"
 
@@ -214,7 +215,7 @@ Item {
 
                     Controls.Label {
                         text: qsTr("Secure Boot is currently enabled. You may need to sign the kernel modules or disable Secure Boot to use NVIDIA drivers.")
-                        color: mutedColor
+                        color: installPage.mutedColor
                         wrapMode: Text.WordWrap
                         font.pixelSize: 14
                         Layout.fillWidth: true

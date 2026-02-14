@@ -1,6 +1,9 @@
-import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls as Controls
+// qmllint disable import
+// qmllint disable missing-property
+// qmllint disable unqualified
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15 as Controls
 import "pages"
 import io.github.AcikKaynakGelistirmeToplulugu.rocontrol
 

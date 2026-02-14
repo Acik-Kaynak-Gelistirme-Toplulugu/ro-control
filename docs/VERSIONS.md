@@ -12,9 +12,10 @@ Yeni bir sürüm çıktığında bu dosyada en üste yeni bir bölüm eklenmeli 
 
 ---
 
-## [1.0.0] - 2026-02-14
+## [1.0.0 Pre Release] - 2026-02-14 
 
 ### Added
+
 - Rust + Qt6 tabanlı yeni masaüstü mimarisi
 - NVIDIA sürücü kurulum/kaldırma akışları
 - Express ve Expert kurulum modları
@@ -23,19 +24,22 @@ Yeni bir sürüm çıktığında bu dosyada en üste yeni bir bölüm eklenmeli 
 - Güncelleme kontrolü (GitHub Releases)
 
 ### Changed
+
 - Fedora/RPM Fusion odaklı sürücü yönetimi
 - Arayüz bileşenlerinde okunabilirlik ve düzen iyileştirmeleri
 - QML sayfa yapısı (Install / Expert / Monitor / Progress) sadeleştirildi
 
 ### Fixed
+
 - Qt/QML açılış hataları ve tip/import uyumsuzlukları giderildi
 - Logger başlatma API uyumsuzluğu giderildi
 
 ### Removed
+
 - Eski web arayüzü kalıntıları
 - Kullanılmayan platform/senaryo bağımlılıkları
 
-Release: https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases/tag/v1.0.0
+Release: [v1.0.0](https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases/tag/v1.0.0)
 
 ---
 
