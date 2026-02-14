@@ -233,3 +233,68 @@ pub fn get_available_nvidia_versions() -> Vec<String> {
     // Defaults if nothing found
     vec!["565".into(), "550".into(), "535".into()]
 }
+
+/// Get official NVIDIA versions with short changelog notes from repository metadata.
+pub fn get_official_nvidia_versions_with_changes() -> Vec<(String, String)> {
+    let versions = get_available_nvidia_versions();
+    let mut notes: HashMap<String, String> = HashMap::new();
+
+    if command::which("dnf") {
+        if let Some(changelog) = command::run(
+            "dnf --refresh repoquery --changelog akmod-nvidia 2>/dev/null | head -n 280",
+        ) {
+            let version_re = Regex::new(r"(\d{3}\.\d{2}(?:\.\d+)?)|(\d{3})").ok();
+            let mut current_version = String::new();
+            let mut current_lines: Vec<String> = Vec::new();
+
+            for line in changelog.lines() {
+                let trimmed = line.trim();
+
+                if trimmed.starts_with('*') {
+                    if !current_version.is_empty() && !current_lines.is_empty() {
+                        notes
+                            .entry(current_version.clone())
+                            .or_insert_with(|| current_lines.join(" "));
+                    }
+
+                    current_version.clear();
+                    current_lines.clear();
+
+                    if let Some(re) = &version_re {
+                        if let Some(caps) = re.captures(trimmed) {
+                            if let Some(m) = caps.get(1).or_else(|| caps.get(2)) {
+                                current_version = m.as_str().to_string();
+                            }
+                        }
+                    }
+                } else if !trimmed.is_empty()
+                    && !current_version.is_empty()
+                    && current_lines.len() < 2
+                {
+                    current_lines.push(trimmed.trim_start_matches('-').trim().to_string());
+                }
+            }
+
+            if !current_version.is_empty() && !current_lines.is_empty() {
+                notes
+                    .entry(current_version)
+                    .or_insert_with(|| current_lines.join(" "));
+            }
+        }
+    }
+
+    versions
+        .into_iter()
+        .take(8)
+        .map(|version| {
+            let summary = notes
+                .iter()
+                .find(|(k, _)| version.starts_with(*k) || k.starts_with(&version))
+                .map(|(_, v)| v.clone())
+                .unwrap_or_else(|| {
+                    "Official repository metadata checked. Detailed notes unavailable.".to_string()
+                });
+            (version, summary)
+        })
+        .collect()
+}

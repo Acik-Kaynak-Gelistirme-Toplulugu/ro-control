@@ -4,21 +4,24 @@ import QtQuick.Controls as Controls
 import "../components"
 import io.github.AcikKaynakGelistirmeToplulugu.rocontrol
 
-// Expert Page — Manual driver version selection
-// Allows custom choice of version, kernel module type, and cleanup options
-
 Item {
     id: expertPage
 
     required property var controller
+    required property bool darkMode
     signal showProgress
     signal goBack
 
     property string selectedVersion: ""
     property bool useOpenKernel: false
     property bool deepClean: false
+    property var officialVersions: []
 
-    // Parse versions from controller
+    readonly property color textColor: darkMode ? "#eef3f9" : "#2d3136"
+    readonly property color mutedColor: darkMode ? "#aeb8c4" : "#77818b"
+    readonly property color cardColor: darkMode ? "#2a333f" : "#f5f6f8"
+    readonly property color borderColor: darkMode ? "#3b4655" : "#c8ced6"
+
     property var versionList: {
         var raw = controller.get_available_versions();
         if (raw.length === 0)
@@ -26,11 +29,38 @@ Item {
         return raw.split(",");
     }
 
+    property var displayVersions: {
+        if (officialVersions.length > 0)
+            return officialVersions;
+        return versionList.map(function (v, idx) {
+            return {
+                version: v,
+                changes: idx === 0 ? qsTr("Latest Stable") : qsTr("Official metadata unavailable"),
+                is_latest: idx === 0
+            };
+        });
+    }
+
+    function refreshOfficialVersions() {
+        try {
+            var raw = controller.get_official_versions_with_changes();
+            var parsed = JSON.parse(raw);
+            officialVersions = parsed;
+        } catch (e) {
+            officialVersions = [];
+        }
+    }
+
+    onVisibleChanged: {
+        if (visible)
+            refreshOfficialVersions();
+    }
+
     Controls.ScrollView {
         anchors.fill: parent
 
         ColumnLayout {
-            width: Math.min(parent.width, 560)
+            width: Math.min(parent.width, 660)
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 16
 
@@ -38,53 +68,80 @@ Item {
                 Layout.preferredHeight: 24
             }
 
-            // ─── Header ───
-            RowLayout {
-                spacing: 12
+            Controls.Label {
+                text: qsTr("Expert Driver Management")
+                font.pixelSize: 20
+                font.weight: Font.DemiBold
+                color: textColor
+            }
 
-                Controls.Button {
-                    icon.name: "go-previous"
-                    flat: true
-                    onClicked: expertPage.goBack()
-                }
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 78
+                radius: 8
+                color: cardColor
+                border.width: 1
+                border.color: borderColor
 
-                ColumnLayout {
-                    spacing: 2
+                GridLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    columns: 2
+                    rowSpacing: 8
+                    columnSpacing: 12
+
                     Controls.Label {
-                        text: qsTr("Expert Driver Management")
-                        font.pixelSize: 18
-                        font.bold: true
+                        text: qsTr("Current:")
+                        color: mutedColor
+                        font.pixelSize: 14
                     }
                     Controls.Label {
-                        text: qsTr("Current: %1").arg(controller.driver_in_use)
-                        opacity: 0.6
-                        font.pixelSize: 12
+                        text: controller.driver_in_use.length > 0 ? controller.driver_in_use : "nvidia-555.42 (proprietary)"
+                        color: textColor
+                        horizontalAlignment: Text.AlignRight
+                        Layout.fillWidth: true
+                        font.pixelSize: 14
+                        font.weight: Font.DemiBold
+                    }
+
+                    Controls.Label {
+                        text: qsTr("Kernel:")
+                        color: mutedColor
+                        font.pixelSize: 14
+                    }
+                    Controls.Label {
+                        text: "6.8.12-300.fc40.x86_64"
+                        color: textColor
+                        horizontalAlignment: Text.AlignRight
+                        Layout.fillWidth: true
+                        font.pixelSize: 14
+                        font.weight: Font.DemiBold
                     }
                 }
             }
 
-            // ─── Version Selection ───
             Controls.GroupBox {
                 Layout.fillWidth: true
                 title: qsTr("Available Versions")
 
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 8
+                    spacing: 10
 
                     Repeater {
-                        model: expertPage.versionList
+                        model: expertPage.displayVersions
 
                         VersionRow {
-                            required property string modelData
+                            required property var modelData
                             required property int index
 
-                            version: modelData
-                            statusText: index === 0 ? qsTr("Latest Stable") : ""
-                            status: index === 0 ? "available" : "available"
-                            selected: expertPage.selectedVersion === modelData
+                            version: typeof modelData === "string" ? modelData : modelData.version
+                            statusText: typeof modelData === "string" ? (index === 0 ? qsTr("Latest Stable") : "") : modelData.changes
+                            status: (typeof modelData === "string" ? modelData : modelData.version) === controller.driver_in_use ? "installed" : "available"
+                            selected: expertPage.selectedVersion === (typeof modelData === "string" ? modelData : modelData.version)
+                            darkMode: expertPage.darkMode
 
-                            onClicked: expertPage.selectedVersion = modelData
+                            onClicked: expertPage.selectedVersion = (typeof modelData === "string" ? modelData : modelData.version)
 
                             Layout.fillWidth: true
                         }
@@ -101,44 +158,53 @@ Item {
                 }
             }
 
-            // ─── Kernel Module Type ───
+            Controls.Label {
+                text: qsTr("Versions are checked from official repository metadata and include available changelog summaries.")
+                color: mutedColor
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
             Controls.GroupBox {
                 Layout.fillWidth: true
                 title: qsTr("Kernel Module")
 
                 RowLayout {
                     spacing: 16
+
                     Controls.RadioButton {
-                        text: qsTr("Proprietary (nvidia)")
+                        text: qsTr("Proprietary")
                         checked: !expertPage.useOpenKernel
                         onClicked: expertPage.useOpenKernel = false
                     }
+
                     Controls.RadioButton {
-                        text: qsTr("Open Kernel (nvidia-open)")
+                        text: qsTr("Open")
                         checked: expertPage.useOpenKernel
                         onClicked: expertPage.useOpenKernel = true
                     }
                 }
             }
 
-            // ─── Options ───
             Controls.CheckBox {
-                text: qsTr("Deep Clean (remove previous configs)")
+                text: qsTr("Remove old configs (Deep Clean)")
                 checked: expertPage.deepClean
                 onToggled: expertPage.deepClean = checked
             }
 
-            // ─── Action Buttons ───
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 12
 
                 Controls.Button {
                     text: qsTr("Install Selected")
-                    icon.name: "download"
                     enabled: expertPage.selectedVersion.length > 0
                     highlighted: true
                     Layout.fillWidth: true
+                    font.pixelSize: 16
+                    palette.button: "#35a3df"
+                    palette.buttonText: "#ffffff"
                     onClicked: {
                         controller.install_custom(expertPage.selectedVersion, expertPage.useOpenKernel);
                         expertPage.showProgress();
@@ -147,8 +213,10 @@ Item {
 
                 Controls.Button {
                     text: qsTr("Remove All & Reset")
-                    icon.name: "edit-delete"
                     Layout.fillWidth: true
+                    font.pixelSize: 16
+                    palette.button: "#f44646"
+                    palette.buttonText: "#ffffff"
                     onClicked: removeDialog.open()
                 }
             }
@@ -159,7 +227,6 @@ Item {
         }
     }
 
-    // ─── Remove Confirmation Dialog ───
     Controls.Dialog {
         id: removeDialog
         title: qsTr("Remove All Drivers?")

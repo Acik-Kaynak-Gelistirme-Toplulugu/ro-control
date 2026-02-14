@@ -11,13 +11,17 @@ Item {
     id: progressPage
 
     required property var controller
+    required property bool darkMode
     signal finished
+
+    readonly property color textColor: darkMode ? "#eef3f9" : "#2d3136"
+    readonly property color mutedColor: darkMode ? "#aeb8c4" : "#77818b"
 
     Controls.ScrollView {
         anchors.fill: parent
 
         ColumnLayout {
-            width: Math.min(parent.width, 560)
+            width: Math.min(parent.width, 660)
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 16
 
@@ -28,24 +32,33 @@ Item {
             // ─── Title ───
             Controls.Label {
                 text: controller.current_status === "removing" ? qsTr("Removing Drivers...") : qsTr("Installing nvidia-%1").arg(controller.best_version)
-                font.pixelSize: 20
-                font.bold: true
+                font.pixelSize: 42
+                font.weight: Font.DemiBold
                 Layout.alignment: Qt.AlignHCenter
+                color: textColor
             }
 
-            // ─── Progress Bar ───
-            Controls.ProgressBar {
+            RowLayout {
                 Layout.fillWidth: true
-                from: 0
-                to: 100
-                value: controller.install_progress
-                indeterminate: controller.install_progress === 0 && controller.is_installing
-            }
+                spacing: 16
 
-            Controls.Label {
-                text: controller.install_progress + " %"
-                Layout.alignment: Qt.AlignHCenter
-                opacity: 0.6
+                Controls.ProgressBar {
+                    Layout.fillWidth: true
+                    from: 0
+                    to: 100
+                    value: controller.install_progress
+                    indeterminate: controller.install_progress === 0 && controller.is_installing
+                }
+
+                Controls.Label {
+                    text: controller.install_progress + "%"
+                    opacity: 0.8
+                    font.pixelSize: 28
+                    font.weight: Font.DemiBold
+                    color: mutedColor
+                    Layout.preferredWidth: 62
+                    horizontalAlignment: Text.AlignRight
+                }
             }
 
             // ─── Installation Steps ───
@@ -61,26 +74,31 @@ Item {
                     StepItem {
                         text: qsTr("Checking compatibility")
                         status: controller.install_progress >= 10 ? "done" : "pending"
+                        darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Downloading packages")
                         status: controller.install_progress >= 30 ? "done" : controller.install_progress >= 10 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Installing drivers")
                         status: controller.install_progress >= 60 ? "done" : controller.install_progress >= 30 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Building kernel module")
                         status: controller.install_progress >= 80 ? "done" : controller.install_progress >= 60 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
                     }
 
                     StepItem {
                         text: qsTr("Running dracut")
                         status: controller.install_progress >= 100 ? "done" : controller.install_progress >= 80 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
                     }
                 }
             }
@@ -91,44 +109,73 @@ Item {
                 Layout.preferredHeight: 240
                 title: qsTr("Log")
 
-                Controls.ScrollView {
+                ColumnLayout {
                     anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
 
-                    Controls.TextArea {
-                        id: logArea
-                        readOnly: true
-                        text: controller.install_log
-                        font.family: "monospace"
-                        font.pixelSize: 12
-                        wrapMode: TextEdit.Wrap
-                        selectByMouse: true
+                    StepItem {
+                        text: qsTr("Checking compatibility...")
+                        status: controller.install_progress >= 10 ? "done" : "pending"
+                        darkMode: progressPage.darkMode
+                    }
 
-                        // Auto-scroll to bottom
-                        onTextChanged: {
-                            logArea.cursorPosition = logArea.length;
-                        }
+                    StepItem {
+                        text: qsTr("Downloading packages...")
+                        status: controller.install_progress >= 30 ? "done" : controller.install_progress >= 10 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
+                    }
+
+                    StepItem {
+                        text: qsTr("Installing akmod-nvidia...")
+                        status: controller.install_progress >= 60 ? "done" : controller.install_progress >= 30 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
+                    }
+
+                    StepItem {
+                        text: qsTr("Building kernel module...")
+                        status: controller.install_progress >= 80 ? "done" : controller.install_progress >= 60 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
+                    }
+
+                    StepItem {
+                        text: qsTr("Running dracut...")
+                        status: controller.install_progress >= 100 ? "done" : controller.install_progress >= 80 ? "running" : "pending"
+                        darkMode: progressPage.darkMode
                     }
                 }
             }
 
-            // ─── Warning ───
-            Controls.Label {
+            Rectangle {
                 visible: controller.is_installing
-                text: "⚠ " + qsTr("Do not turn off your computer during this process")
-                opacity: 0.7
-                Layout.alignment: Qt.AlignHCenter
-                font.pixelSize: 12
+                Layout.fillWidth: true
+                implicitHeight: 58
+                radius: 8
+                color: darkMode ? "#3a2e1f" : "#fef4e8"
+                border.width: 1
+                border.color: "#f59f23"
+
+                Controls.Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 16
+                    text: qsTr("! Do not turn off your computer")
+                    color: "#f59f23"
+                    font.pixelSize: 16
+                    font.weight: Font.DemiBold
+                }
             }
 
             // ─── Buttons ───
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 12
+                spacing: 0
 
                 Controls.Button {
                     visible: controller.is_installing
                     text: qsTr("Cancel")
-                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: 100
                     onClicked: cancelDialog.open()
                 }
 

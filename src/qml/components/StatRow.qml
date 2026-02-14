@@ -12,17 +12,15 @@ RowLayout {
     property string label: ""
     property string value: ""
     property real fraction: 0.0  // 0.0 to 1.0
+    property bool darkMode: false
 
-    // Color based on value: green < 60%, yellow < 85%, red >= 85%
-    readonly property color barColor: {
-        if (fraction < 0.6) return "#27ae60"
-        if (fraction < 0.85) return "#f39c12"
-        return "#da4453"
-    }
+    readonly property color barColor: "#2eb66d"
 
     Controls.Label {
         text: statRow.label
-        opacity: 0.7
+        opacity: 0.95
+        color: darkMode ? "#eef3f9" : "#2d3136"
+        font.pixelSize: 16
         Layout.preferredWidth: 90
     }
 
@@ -35,7 +33,7 @@ RowLayout {
         background: Rectangle {
             implicitHeight: 8
             radius: 4
-            color: palette.alternateBase
+            color: darkMode ? "#18212b" : "#dfe3e8"
         }
 
         contentItem: Item {
@@ -52,8 +50,9 @@ RowLayout {
 
     Controls.Label {
         text: statRow.value
-        font.pixelSize: 12
-        opacity: 0.6
+        font.pixelSize: 16
+        opacity: 0.95
+        color: darkMode ? "#aeb8c4" : "#77818b"
         Layout.preferredWidth: 80
         horizontalAlignment: Text.AlignRight
     }

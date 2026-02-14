@@ -11,49 +11,66 @@ Item {
     id: installPage
 
     required property var controller
+    required property bool darkMode
     signal showExpert
     signal showProgress
+
+    readonly property color textColor: darkMode ? "#eef3f9" : "#2d3136"
+    readonly property color mutedColor: darkMode ? "#aeb8c4" : "#77818b"
+    readonly property color cardColor: darkMode ? "#2a333f" : "#f5f6f8"
+    readonly property color borderColor: darkMode ? "#3b4655" : "#c8ced6"
 
     Controls.ScrollView {
         anchors.fill: parent
 
         ColumnLayout {
-            width: Math.min(parent.width, 560)
+            width: Math.min(parent.width, 660)
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 16
 
             Item {
-                Layout.preferredHeight: 40
+                Layout.preferredHeight: 24
             }
 
             // ─── Hero Section ───
             ColumnLayout {
                 Layout.alignment: Qt.AlignHCenter
-                spacing: 8
+                spacing: 10
 
-                // GPU Icon
-                Controls.Label {
-                    text: "🖥"
-                    font.pixelSize: 48
+                Rectangle {
+                    width: 58
+                    height: 58
+                    radius: 29
+                    color: darkMode ? "#173447" : "#d8edf7"
                     Layout.alignment: Qt.AlignHCenter
+
+                    Controls.Label {
+                        anchors.centerIn: parent
+                        text: "~"
+                        font.pixelSize: 30
+                        color: "#30a6e0"
+                    }
                 }
 
                 Controls.Label {
                     text: qsTr("Select Installation Type")
-                    font.pixelSize: 22
-                    font.bold: true
+                    font.pixelSize: 40
+                    font.weight: Font.DemiBold
                     Layout.alignment: Qt.AlignHCenter
+                    color: textColor
                 }
 
                 Controls.Label {
                     text: qsTr("Optimized options for your hardware")
-                    opacity: 0.6
+                    opacity: 0.8
+                    font.pixelSize: 16
+                    color: mutedColor
                     Layout.alignment: Qt.AlignHCenter
                 }
             }
 
             Item {
-                Layout.preferredHeight: 12
+                Layout.preferredHeight: 14
             }
 
             // ─── No Internet Warning ───
@@ -73,33 +90,140 @@ Item {
             }
 
             // ─── Express Install Card ───
-            ActionCard {
+            Rectangle {
                 Layout.fillWidth: true
-                enabled: controller.has_internet
+                implicitHeight: 116
+                radius: 8
+                color: cardColor
+                border.width: 1
+                border.color: borderColor
 
-                title: qsTr("Express Install (Recommended)")
-                description: controller.is_up_to_date ? qsTr("✓ Driver is up to date (%1)").arg(controller.best_version) : qsTr("Install nvidia-%1 — Compatible ✓").arg(controller.best_version)
-                icon: "✓"
-                accentColor: palette.highlight
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: controller.has_internet
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: installPage.showProgress()
+                }
 
-                onClicked: installPage.showProgress()
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 14
+
+                    Controls.Label {
+                        text: "✓"
+                        color: "#2eb66d"
+                        font.pixelSize: 28
+                        Layout.alignment: Qt.AlignTop
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        Controls.Label {
+                            text: qsTr("Express Install (Recommended)")
+                            font.pixelSize: 16
+                            font.weight: Font.DemiBold
+                            color: textColor
+                        }
+
+                        Controls.Label {
+                            text: qsTr("Installs nvidia-%1").arg(controller.best_version.length > 0 ? controller.best_version : "560.35.03")
+                            color: mutedColor
+                            font.pixelSize: 14
+                        }
+
+                        Controls.Label {
+                            text: qsTr("Compatible: Verified")
+                            color: "#2eb66d"
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                        }
+                    }
+                }
             }
 
             // ─── Custom Install Card ───
-            ActionCard {
+            Rectangle {
                 Layout.fillWidth: true
-                enabled: true
+                implicitHeight: 98
+                radius: 8
+                color: cardColor
+                border.width: 1
+                border.color: borderColor
 
-                title: qsTr("Custom Install (Expert)")
-                description: qsTr("Choose version, kernel module, and cleanup options")
-                icon: "⚙"
-                accentColor: palette.mid
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: installPage.showExpert()
+                }
 
-                onClicked: installPage.showExpert()
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 14
+
+                    Controls.Label {
+                        text: "⚙"
+                        color: "#35a3df"
+                        font.pixelSize: 25
+                        Layout.alignment: Qt.AlignTop
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        Controls.Label {
+                            text: qsTr("Custom Install (Expert)")
+                            font.pixelSize: 16
+                            font.weight: Font.DemiBold
+                            color: textColor
+                        }
+
+                        Controls.Label {
+                            text: qsTr("Choose version, kernel module")
+                            color: mutedColor
+                            font.pixelSize: 14
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                visible: controller.secure_boot
+                Layout.fillWidth: true
+                implicitHeight: 96
+                radius: 8
+                color: darkMode ? "#3a2e1f" : "#fef4e8"
+                border.width: 1
+                border.color: "#f59f23"
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 6
+
+                    Controls.Label {
+                        text: qsTr("Secure Boot Warning")
+                        color: "#f59f23"
+                        font.pixelSize: 16
+                        font.weight: Font.DemiBold
+                    }
+
+                    Controls.Label {
+                        text: qsTr("Secure Boot is currently enabled. You may need to sign the kernel modules or disable Secure Boot to use NVIDIA drivers.")
+                        color: mutedColor
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: 14
+                        Layout.fillWidth: true
+                    }
+                }
             }
 
             Item {
-                Layout.preferredHeight: 20
+                Layout.preferredHeight: 12
             }
         }
     }

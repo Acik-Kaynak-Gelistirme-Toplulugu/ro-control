@@ -7,32 +7,30 @@ import QtQuick.Controls as Controls
 
 Rectangle {
     id: versionRow
-    
-    implicitHeight: 56
+
+    implicitHeight: 54
     radius: 6
-    
+
     Layout.fillWidth: true
-    
+
     property string version: ""
     property string status: "available"  // available | installed | selected | incompatible
     property string statusText: ""
     property bool selected: false
-    
-    color: {
-        if (selected) return palette.highlight
-        if (mouseArea.containsMouse) return palette.alternateBase
-        return palette.base
-    }
-    
+    property bool darkMode: false
+
+    color: mouseArea.containsMouse ? (darkMode ? "#313d4d" : "#eef1f4") : "transparent"
+
     Behavior on color {
-        ColorAnimation { duration: 150 }
+        ColorAnimation {
+            duration: 150
+        }
     }
-    
-    signal clicked()
-    
-    border.width: selected ? 2 : 1
-    border.color: selected ? palette.highlight : palette.mid
-    
+
+    signal clicked
+
+    border.width: 0
+
     MouseArea {
         id: mouseArea
         anchors.fill: parent
@@ -40,97 +38,55 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         onClicked: versionRow.clicked()
     }
-    
+
     RowLayout {
         anchors.fill: parent
         anchors.margins: 12
         spacing: 12
-        
+
         // Radio button or checkmark
         Rectangle {
-            width: 20
-            height: 20
-            radius: 10
-            color: versionRow.selected ? palette.highlight : "transparent"
+            width: 18
+            height: 18
+            radius: 9
+            color: "transparent"
             border.width: 2
-            border.color: versionRow.selected ? palette.highlight : palette.mid
-            
+            border.color: versionRow.selected ? "#35a3df" : (darkMode ? "#9eadbf" : "#77818b")
+
             Controls.Label {
                 anchors.centerIn: parent
-                text: versionRow.selected ? "✓" : ""
-                color: palette.base
+                text: versionRow.selected ? "●" : ""
+                color: "#35a3df"
                 font.bold: true
-                font.pixelSize: 12
+                font.pixelSize: 9
             }
         }
-        
+
         // Version text
         ColumnLayout {
             spacing: 1
             Layout.fillWidth: true
-            
+
             Controls.Label {
                 text: versionRow.version
                 font.bold: true
-                font.pixelSize: 13
-                color: versionRow.selected ? palette.base : palette.text
+                font.pixelSize: 16
+                color: darkMode ? "#eef3f9" : "#2d3136"
             }
-            
+
             Controls.Label {
                 text: versionRow.statusText
-                font.pixelSize: 11
-                opacity: 0.6
-                color: versionRow.selected ? palette.base : palette.text
+                font.pixelSize: 14
+                opacity: 0.9
+                color: darkMode ? "#aeb8c4" : "#77818b"
             }
         }
-        
-        // Status badge
-        Rectangle {
-            visible: versionRow.status !== "available"
-            width: statusLabel.width + 8
-            height: 24
-            radius: 4
-            
-            color: {
-                switch (versionRow.status) {
-                    case "installed": return "#3327ae60"
-                    case "selected": return "#332980b9"
-                    case "incompatible": return "#33da4453"
-                    default: return "transparent"
-                }
-            }
-            
-            border.width: 1
-            border.color: {
-                switch (versionRow.status) {
-                    case "installed": return "#27ae60"
-                    case "selected": return "#2980b9"
-                    case "incompatible": return "#da4453"
-                    default: return "transparent"
-                }
-            }
-            
-            Controls.Label {
-                id: statusLabel
-                anchors.centerIn: parent
-                text: {
-                    switch (versionRow.status) {
-                        case "installed": return "✓ Installed"
-                        case "selected": return "Selected"
-                        case "incompatible": return "⚠ Incompatible"
-                        default: return ""
-                    }
-                }
-                font.pixelSize: 11
-                color: {
-                    switch (versionRow.status) {
-                        case "installed": return "#27ae60"
-                        case "selected": return "#2980b9"
-                        case "incompatible": return "#da4453"
-                        default: return palette.text
-                    }
-                }
-            }
+
+        Controls.Label {
+            text: "◉"
+            color: "#2eb66d"
+            font.pixelSize: 18
+            visible: versionRow.status !== "incompatible"
         }
     }
 }

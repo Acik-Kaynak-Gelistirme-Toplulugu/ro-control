@@ -40,6 +40,10 @@ pub mod ffi {
         #[qinvokable]
         fn get_available_versions(self: Pin<&mut GpuController>) -> QString;
 
+        /// Get official version list with short changelog notes as JSON array
+        #[qinvokable]
+        fn get_official_versions_with_changes(self: Pin<&mut GpuController>) -> QString;
+
         /// Check if a specific version is compatible with the current kernel
         #[qinvokable]
         fn is_version_compatible(self: Pin<&mut GpuController>, version: &QString) -> bool;
@@ -148,6 +152,27 @@ impl ffi::GpuController {
         use crate::core::detector;
         let versions = detector::get_available_nvidia_versions();
         QString::from(&versions.join(","))
+    }
+
+    fn get_official_versions_with_changes(self: Pin<&mut Self>) -> QString {
+        use crate::core::detector;
+
+        let rows = detector::get_official_nvidia_versions_with_changes();
+        let payload: Vec<serde_json::Value> = rows
+            .into_iter()
+            .enumerate()
+            .map(|(index, (version, changes))| {
+                serde_json::json!({
+                    "version": version,
+                    "changes": changes,
+                    "is_latest": index == 0,
+                    "source": "dnf-rpmfusion"
+                })
+            })
+            .collect();
+
+        let json = serde_json::to_string(&payload).unwrap_or_else(|_| "[]".to_string());
+        QString::from(&json)
     }
 
     fn is_version_compatible(self: Pin<&mut Self>, version: &QString) -> bool {

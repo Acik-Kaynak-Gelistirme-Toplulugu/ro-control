@@ -173,9 +173,3 @@ Currently supported: **English**, **Türkçe**
 ## License
 
 This project is licensed under the [GPL-3.0](LICENSE) license.
-
----
-
-<div align="center">
-  <sub>Made by <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu">Açık Kaynak Geliştirme Topluluğu</a></sub>
-</div>

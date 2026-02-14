@@ -131,9 +131,3 @@ Katkılarınızı memnuniyetle karşılıyoruz. Pull request açmadan önce lüt
 ## Lisans
 
 Bu proje [GPL-3.0](LICENSE) lisansı ile dağıtılmaktadır.
-
----
-
-<div align="center">
-  <sub>❤️ ile geliştirildi — <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu">Açık Kaynak Geliştirme Topluluğu</a></sub>
-</div>
