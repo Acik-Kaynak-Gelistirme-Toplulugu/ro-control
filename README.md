@@ -172,7 +172,7 @@ We welcome contributions from everyone! Please read our [Contributing Guide](CON
 Quick start:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ro-Control.git
+git clone https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control.git
 cd ro-Control
 cargo build
 cargo run
