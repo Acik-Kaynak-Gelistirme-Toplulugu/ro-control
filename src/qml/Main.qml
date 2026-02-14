@@ -220,7 +220,7 @@ Controls.ApplicationWindow {
                     }
 
                     Controls.Label {
-                        text: "v" + "1.0.0"
+                        text: "v" + "1.1.0"
                         opacity: 0.75
                         font.pixelSize: 13
                         color: root.cMuted
@@ -280,7 +280,7 @@ Controls.ApplicationWindow {
             width: 360
 
             Controls.Label {
-                text: "ro-Control v1.0.0"
+                text: "ro-Control v1.1.0"
                 font.pixelSize: 18
                 font.weight: Font.DemiBold
                 color: root.cText

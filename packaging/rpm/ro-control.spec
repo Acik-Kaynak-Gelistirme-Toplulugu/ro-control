@@ -1,6 +1,6 @@
 Name:           ro-control
-Version:        1.0.0
-Release:        2%{?dist}
+Version:        1.1.0
+Release:        1%{?dist}
 Summary:        Smart GPU driver manager for Linux
 
 %global debug_package %{nil}

@@ -12,6 +12,41 @@ When a new version is published, add a new section at the top and keep previous 
 
 ---
 
+## [1.1.0] - 2026-02-14
+
+### Added
+
+- Root-task shell script hardened with strict command allowlist (only `dnf`, `grubby`, `dracut`, `systemctl`, `modprobe`, `timeshift` permitted)
+- Kernel version compatibility check (`is_version_compatible()`) before driver installation
+- 23 unit tests across `updater`, `detector`, `command`, and `i18n` modules
+- MSRV 1.82 verification job in CI pipeline
+- SECURITY.md responsible disclosure policy
+- `.dockerignore` to keep container builds lean
+- `parse_locale()` pure function for testable locale detection without environment variable side effects
+
+### Changed
+
+- Dockerfile upgraded from Fedora 41 to Fedora 42 with multi-stage build and `rustup`-based toolchain
+- Flatpak manifest updated with `--release` build flag and Qt6 modules
+- i18n tests rewritten to avoid `std::env::set_var` (safe for parallel execution on Rust 1.88+)
+- `rust-toolchain.toml` documented in BUILDING.md
+- Config URLs corrected to use `ro-Control` (capital C) consistently
+
+### Fixed
+
+- `po/POTFILES.in` paths corrected to match current source tree
+- Metainfo XML URLs and screenshot paths fixed for Flathub validation
+- CI format and test failures resolved (cargo fmt, thread-safe tests)
+
+### Removed
+
+- Unused dependencies: `env_logger`, `open`
+- Environment-variable-dependent i18n tests replaced with pure function tests
+
+Release: [v1.1.0](https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases/tag/v1.1.0)
+
+---
+
 ## [1.0.0] - 2026-02-14
 
 ### Added

@@ -44,8 +44,14 @@ fn detect_language() -> Lang {
     let raw = std::env::var("LANG")
         .or_else(|_| std::env::var("LC_ALL"))
         .or_else(|_| std::env::var("LC_MESSAGES"))
-        .unwrap_or_default()
-        .to_lowercase();
+        .unwrap_or_default();
+
+    parse_locale(&raw)
+}
+
+/// Parse a locale string (e.g. "tr_TR.UTF-8") into a Lang variant.
+fn parse_locale(raw: &str) -> Lang {
+    let raw = raw.to_lowercase();
 
     if raw.starts_with("tr") {
         return Lang::Tr;
@@ -593,35 +599,32 @@ mod tests {
     use super::*;
 
     #[test]
-    fn detect_turkish() {
-        std::env::set_var("LANG", "tr_TR.UTF-8");
-        std::env::remove_var("LC_ALL");
-        std::env::remove_var("LC_MESSAGES");
-        assert_eq!(detect_language(), Lang::Tr);
+    fn parse_turkish() {
+        assert_eq!(parse_locale("tr_TR.UTF-8"), Lang::Tr);
+        assert_eq!(parse_locale("TR_TR"), Lang::Tr);
     }
 
     #[test]
-    fn detect_english_fallback() {
-        std::env::set_var("LANG", "en_US.UTF-8");
-        std::env::remove_var("LC_ALL");
-        std::env::remove_var("LC_MESSAGES");
-        assert_eq!(detect_language(), Lang::En);
+    fn parse_english_fallback() {
+        assert_eq!(parse_locale("en_US.UTF-8"), Lang::En);
+        assert_eq!(parse_locale(""), Lang::En);
     }
 
     #[test]
-    fn detect_unknown_falls_back_to_english() {
-        std::env::set_var("LANG", "xx_XX.UTF-8");
-        std::env::remove_var("LC_ALL");
-        std::env::remove_var("LC_MESSAGES");
-        assert_eq!(detect_language(), Lang::En);
+    fn parse_unknown_falls_back_to_english() {
+        assert_eq!(parse_locale("xx_XX.UTF-8"), Lang::En);
     }
 
     #[test]
-    fn detect_portuguese_brazil() {
-        std::env::set_var("LANG", "pt_BR.UTF-8");
-        std::env::remove_var("LC_ALL");
-        std::env::remove_var("LC_MESSAGES");
-        assert_eq!(detect_language(), Lang::PtBr);
+    fn parse_portuguese_brazil() {
+        assert_eq!(parse_locale("pt_BR.UTF-8"), Lang::PtBr);
+    }
+
+    #[test]
+    fn parse_chinese_variants() {
+        assert_eq!(parse_locale("zh_CN.UTF-8"), Lang::ZhCn);
+        assert_eq!(parse_locale("zh_TW.UTF-8"), Lang::ZhTw);
+        assert_eq!(parse_locale("zh_Hant"), Lang::ZhTw);
     }
 
     #[test]
@@ -634,7 +637,10 @@ mod tests {
     #[test]
     fn dictionary_has_turkish_translations() {
         let dict = get_dictionary();
-        let tr_map = dict.langs.get(&Lang::Tr).expect("Turkish translations missing");
+        let tr_map = dict
+            .langs
+            .get(&Lang::Tr)
+            .expect("Turkish translations missing");
         assert!(tr_map.contains_key("title_main"));
     }
 
