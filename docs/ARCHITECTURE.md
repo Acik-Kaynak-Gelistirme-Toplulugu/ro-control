@@ -26,7 +26,7 @@ src/
 └── utils/               ← Cross-cutting concerns
     ├── command.rs       ← Shell command execution wrapper
     ├── i18n.rs          ← TR/EN dictionary-based translation
-    └── logger.rs        ← Logging setup (env_logger + XDG dirs)
+    └── logger.rs        ← Logging setup (simplelog with colored terminal output)
 ```
 
 ## Key Design Decisions

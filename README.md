@@ -9,10 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/releases"><img src="https://img.shields.io/github/v/release/Acik-Kaynak-Gelistirme-Toplulugu/ro-control?style=flat-square&color=blue" alt="Release"></a>
+  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases"><img src="https://img.shields.io/github/v/release/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control?style=flat-square&color=blue" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green?style=flat-square" alt="License"></a>
-  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/actions"><img src="https://img.shields.io/github/actions/workflow/status/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/ci.yml?style=flat-square&label=CI" alt="CI"></a>
-  <img src="https://img.shields.io/badge/platform-Fedora%20Linux-51A2DA?style=flat-square" alt="Fedora">
+  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/actions"><img src="https://img.shields.io/github/actions/workflow/status/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/ci.yml?style=flat-square&label=CI" alt="CI"></a>
+  <img src="https://img.shields.io/badge/platform-Fedora%2040+-51A2DA?style=flat-square" alt="Fedora">
+  <img src="https://img.shields.io/badge/rust-1.82+-orange?style=flat-square&logo=rust" alt="Rust">
 </p>
 
 <p align="center">
@@ -30,7 +31,7 @@
 
 ---
 
-ro-Control is a native Linux desktop application that simplifies GPU driver management. It provides a modern interface for installing, configuring, and monitoring NVIDIA graphics drivers on Fedora and other Linux distributions.
+ro-Control is a native Linux desktop application built with **Rust** and **Qt6/QML** (via [CXX-Qt](https://github.com/KDAB/cxx-qt)) that simplifies NVIDIA GPU driver management on Fedora. It provides a modern interface for installing, configuring, and monitoring graphics drivers with full PolicyKit integration for secure privilege escalation.
 
 <!-- TODO: Add screenshots
 <p align="center">
@@ -79,26 +80,30 @@ ro-Control is a native Linux desktop application that simplifies GPU driver mana
 
 ### Fedora (RPM)
 
-Download the latest release from [Releases](https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/releases):
+Download the latest `.rpm` from [Releases](https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases):
 
 ```bash
-sudo dnf install ./ro-control-1.0.0-1.fc*.x86_64.rpm
+sudo dnf install ./ro-control-1.0.0-2.fc40.x86_64.rpm
 ```
 
 ### From Source
 
+> **Requires Rust ≥ 1.82.** Install via [rustup](https://rustup.rs/) if your distro ships an older version.
+
 ```bash
-# Install dependencies
-sudo dnf install cargo cmake extra-cmake-modules gcc-c++ \
+# Install build dependencies (Fedora 40+)
+sudo dnf install cmake extra-cmake-modules gcc-c++ \
   kf6-qqc2-desktop-style \
   qt6-qtdeclarative-devel \
   qt6-qtbase-devel \
   qt6-qtwayland-devel
 
-# Build and install
-git clone https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control.git
-cd ro-control
-make build
+# Clone and build
+git clone https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control.git
+cd ro-Control
+cargo build --release
+
+# Install system-wide
 sudo make install
 ```
 
@@ -117,11 +122,25 @@ ro-control
 ## Project Structure
 
 ```text
-ro-control/
+ro-Control/
 ├── src/                    # Application source code
-│   ├── core/               #   Business logic (detection, installation, monitoring)
-│   ├── qml/                #   Interface files
-│   └── utils/              #   Shared utilities (i18n, logging, commands)
+│   ├── main.rs             #   Entry point: logging, i18n, app launch
+│   ├── bridge.rs           #   CXX-Qt bridge (Rust ↔ QML)
+│   ├── config.rs           #   App constants (APP_ID, VERSION, etc.)
+│   ├── core/               #   Business logic
+│   │   ├── detector.rs     #     GPU/CPU/OS hardware detection
+│   │   ├── installer.rs    #     DNF-based driver install/remove
+│   │   ├── tweaks.rs       #     GPU stats, GameMode, Wayland fix
+│   │   └── updater.rs      #     GitHub Releases update check
+│   ├── qml/                #   Qt Quick interface
+│   │   ├── Main.qml        #     App window + sidebar navigation
+│   │   ├── Theme.qml       #     Dark/light theme definitions
+│   │   ├── pages/          #     Install, Expert, Perf, Progress
+│   │   └── components/     #     Reusable UI components
+│   └── utils/              #   Shared utilities
+│       ├── command.rs      #     Shell command runner
+│       ├── i18n.rs         #     TR/EN translation system
+│       └── logger.rs       #     simplelog setup
 ├── data/                   # FreeDesktop data files
 │   ├── icons/              #   Hicolor theme icons (scalable + symbolic SVG)
 │   ├── polkit/             #   PolicyKit authorization policy
@@ -131,12 +150,14 @@ ro-control/
 ├── packaging/              # Distribution packaging
 │   ├── rpm/                #   Fedora RPM spec
 │   └── flatpak/            #   Flatpak manifest
-├── scripts/                # Helper scripts
+├── scripts/                # Helper scripts (pkexec wrapper)
 ├── po/                     # Translation files
 ├── docs/                   # Documentation
 │   ├── ARCHITECTURE.md     #   Technical architecture
-│   └── BUILDING.md         #   Build instructions
-├── .github/                # CI/CD and issue templates
+│   ├── BUILDING.md         #   Build instructions
+│   ├── DESIGN_BRIEF.md     #   UI design specification
+│   └── VERSIONS.md         #   Version notes
+├── .github/                # CI/CD workflows
 ├── Cargo.toml              # Project manifest
 ├── Makefile                # Build/install targets
 ├── CHANGELOG.md            # Release history
@@ -151,8 +172,8 @@ We welcome contributions from everyone! Please read our [Contributing Guide](CON
 Quick start:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ro-control.git
-cd ro-control
+git clone https://github.com/YOUR_USERNAME/ro-Control.git
+cd ro-Control
 cargo build
 cargo run
 

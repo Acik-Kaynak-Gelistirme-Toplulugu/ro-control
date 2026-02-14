@@ -71,7 +71,7 @@ Improvements to documentation are always welcome:
 - All public functions should have doc comments
 - Variable and function names in English
 - UI strings go through the `i18n::tr()` system
-- Keep modules focused: UI code in `ui/`, business logic in `core/`
+- Keep modules focused: UI code in `qml/`, business logic in `core/`
 
 ### Commit Messages
 

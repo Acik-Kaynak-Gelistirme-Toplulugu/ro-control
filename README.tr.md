@@ -9,10 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/releases"><img src="https://img.shields.io/github/v/release/Acik-Kaynak-Gelistirme-Toplulugu/ro-control?style=flat-square&color=blue" alt="Sürüm"></a>
+  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases"><img src="https://img.shields.io/github/v/release/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control?style=flat-square&color=blue" alt="Sürüm"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/lisans-GPL--3.0-green?style=flat-square" alt="Lisans"></a>
-  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/actions"><img src="https://img.shields.io/github/actions/workflow/status/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/ci.yml?style=flat-square&label=CI" alt="CI"></a>
-  <img src="https://img.shields.io/badge/platform-Fedora%20Linux-51A2DA?style=flat-square" alt="Fedora">
+  <a href="https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/actions"><img src="https://img.shields.io/github/actions/workflow/status/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/ci.yml?style=flat-square&label=CI" alt="CI"></a>
+  <img src="https://img.shields.io/badge/platform-Fedora%2040+-51A2DA?style=flat-square" alt="Fedora">
+  <img src="https://img.shields.io/badge/rust-1.82+-orange?style=flat-square&logo=rust" alt="Rust">
 </p>
 
 <p align="center">
@@ -30,7 +31,7 @@
 
 ---
 
-ro-Control, Linux üzerinde GPU sürücü yönetimini kolaylaştıran yerel bir masaüstü uygulamasıdır; Fedora ve benzeri dağıtımlarda NVIDIA sürücülerini kurma, yapılandırma ve izleme süreçlerini sadeleştirir.
+ro-Control, **Rust** ve **Qt6/QML** ([CXX-Qt](https://github.com/KDAB/cxx-qt)) ile geliştirilen, Fedora üzerinde NVIDIA GPU sürücü yönetimini kolaylaştıran yerel bir Linux masaüstü uygulamasıdır. PolicyKit entegrasyonu ile güvenli yetki yükseltme desteği sunar.
 
 ## Özellikler
 
@@ -72,24 +73,30 @@ ro-Control, Linux üzerinde GPU sürücü yönetimini kolaylaştıran yerel bir 
 
 ### Fedora (RPM)
 
-En güncel sürümü [Releases](https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control/releases) sayfasından indirip kurabilirsiniz:
+En güncel `.rpm` dosyasını [Releases](https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases) sayfasından indirip kurabilirsiniz:
 
 ```bash
-sudo dnf install ./ro-control-1.0.0-1.fc*.x86_64.rpm
+sudo dnf install ./ro-control-1.0.0-2.fc40.x86_64.rpm
 ```
 
 ### Kaynaktan
 
+> **Rust ≥ 1.82 gereklidir.** Dağıtımınız eski sürüm içeriyorsa [rustup](https://rustup.rs/) ile kurun.
+
 ```bash
-sudo dnf install cargo cmake extra-cmake-modules gcc-c++ \
+# Derleme bağımlılıklarını kur (Fedora 40+)
+sudo dnf install cmake extra-cmake-modules gcc-c++ \
   kf6-qqc2-desktop-style \
   qt6-qtdeclarative-devel \
   qt6-qtbase-devel \
   qt6-qtwayland-devel
 
-git clone https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-control.git
-cd ro-control
-make build
+# Klonla ve derle
+git clone https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control.git
+cd ro-Control
+cargo build --release
+
+# Sistem genelinde kur
 sudo make install
 ```
 
@@ -108,20 +115,35 @@ ro-control
 ## Proje Yapısı
 
 ```text
-ro-control/
+ro-Control/
 ├── src/                    # Uygulama kaynak kodu
-│   ├── core/               # İş mantığı (tespit, kurulum, izleme)
-│   ├── qml/                # Arayüz dosyaları
-│   └── utils/              # Yardımcı modüller
+│   ├── main.rs             #   Giriş noktası: loglama, i18n, uygulama başlatma
+│   ├── bridge.rs           #   CXX-Qt köprüsü (Rust ↔ QML)
+│   ├── config.rs           #   Uygulama sabitleri
+│   ├── core/               #   İş mantığı
+│   │   ├── detector.rs     #     GPU/CPU/OS donanım algılama
+│   │   ├── installer.rs    #     DNF tabanlı sürücü kurulum/kaldırma
+│   │   ├── tweaks.rs       #     GPU istatistikleri, GameMode, Wayland düzeltme
+│   │   └── updater.rs      #     GitHub Releases güncelleme kontrolü
+│   ├── qml/                #   Qt Quick arayüz dosyaları
+│   │   ├── Main.qml        #     Uygulama penceresi + kenar çubuğu
+│   │   ├── Theme.qml       #     Koyu/açık tema tanımları
+│   │   ├── pages/          #     Install, Expert, Perf, Progress
+│   │   └── components/     #     Yeniden kullanılabilir bileşenler
+│   └── utils/              #   Yardımcı modüller
+│       ├── command.rs      #     Kabuk komut çalıştırıcı
+│       ├── i18n.rs         #     TR/EN çeviri sistemi
+│       └── logger.rs       #     simplelog yapılandırması
 ├── data/                   # FreeDesktop veri dosyaları
 ├── packaging/              # RPM/Flatpak paketleme dosyaları
-├── scripts/                # Yardımcı scriptler
+├── scripts/                # Yardımcı scriptler (pkexec wrapper)
 ├── po/                     # Çeviri dosyaları
 ├── docs/                   # Dokümantasyon
-├── .github/                # CI/CD ve issue şablonları
-├── Cargo.toml
-├── Makefile
-└── README.md
+├── .github/                # CI/CD iş akışları
+├── Cargo.toml              # Proje manifesto
+├── Makefile                # Derleme/kurulum hedefleri
+├── CHANGELOG.md            # Sürüm geçmişi
+└── CONTRIBUTING.md         # Katkı rehberi
 ```
 
 ## Katkı

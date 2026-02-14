@@ -1,63 +1,77 @@
 # Version Notes
 
-Bu dosya, her sürümde yapılan değişikliklerin kısa ve takip edilebilir özetini tutar.
-Yeni bir sürüm çıktığında bu dosyada en üste yeni bir bölüm eklenmeli ve eski bölümler korunmalıdır.
+This file keeps a short, trackable summary of changes made in each release.
+When a new version is published, add a new section at the top and keep previous sections intact.
 
-## Güncelleme Kuralı
+## Update Guidelines
 
-- Yeni sürüm çıktığında en üste `## [x.y.z] - YYYY-MM-DD` başlığı ekleyin.
-- Aşağıdaki başlıkları kullanın: `Added`, `Changed`, `Fixed`, `Removed`.
-- Mümkün olduğunca kullanıcıya etkisi olan değişiklikleri yazın.
-- Her sürüm için release bağlantısı ekleyin.
+- Add a `## [x.y.z] - YYYY-MM-DD` heading at the top for each new release.
+- Use the following categories: `Added`, `Changed`, `Fixed`, `Removed`.
+- Focus on user-facing changes whenever possible.
+- Include a release link at the end of each version section.
 
 ---
 
-## [1.0.0 Pre Release] - 2026-02-14 
+## [1.0.0] - 2026-02-14
 
 ### Added
 
-- Rust + Qt6 tabanlı yeni masaüstü mimarisi
-- NVIDIA sürücü kurulum/kaldırma akışları
-- Express ve Expert kurulum modları
-- GPU/CPU/RAM canlı izleme ekranı
-- Secure Boot kontrolü ve uyarı akışı
-- Güncelleme kontrolü (GitHub Releases)
+- New desktop architecture built with Rust + Qt6 (CXX-Qt)
+- NVIDIA driver install / uninstall workflows via RPM Fusion
+- Express and Expert installation modes
+- Live GPU / CPU / RAM performance monitoring dashboard
+- Secure Boot detection and warning flow
+- Automatic update checking via GitHub Releases API
+- Feral GameMode one-click installation
+- Flatpak / Steam permission repair utility
+- NVIDIA Wayland fix (`nvidia-drm.modeset=1` via GRUB)
+- Hybrid graphics switching (NVIDIA / Intel / On-Demand)
+- PolicyKit integration for secure privilege escalation
+- Timeshift snapshot creation before driver operations
+- English and Turkish bilingual interface
 
 ### Changed
 
-- Fedora/RPM Fusion odaklı sürücü yönetimi
-- Arayüz bileşenlerinde okunabilirlik ve düzen iyileştirmeleri
-- QML sayfa yapısı (Install / Expert / Monitor / Progress) sadeleştirildi
+- Fedora / RPM Fusion–focused driver management
+- Improved readability and layout across all UI components
+- Simplified QML page structure (Install / Expert / Performance / Progress)
+- Initramfs regeneration uses `dracut` (Fedora-native)
+- Desktop entry and metainfo follow latest FreeDesktop standards
 
 ### Fixed
 
-- Qt/QML açılış hataları ve tip/import uyumsuzlukları giderildi
-- Logger başlatma API uyumsuzluğu giderildi
+- Qt/QML startup errors and type/import mismatches resolved
+- Logger initialization API incompatibility resolved
 
 ### Removed
 
-- Eski web arayüzü kalıntıları
-- Kullanılmayan platform/senaryo bağımlılıkları
+- Legacy web UI artifacts (React/Vite)
+- Unused platform and scenario dependencies
+- Debian `.deb` packaging (replaced by `.rpm`)
 
 Release: [v1.0.0](https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases/tag/v1.0.0)
 
 ---
 
-## Şablon
+## Template
 
 ```markdown
 ## [x.y.z] - YYYY-MM-DD
 
 ### Added
+
 - ...
 
 ### Changed
+
 - ...
 
 ### Fixed
+
 - ...
 
 ### Removed
+
 - ...
 
 Release: https://github.com/Acik-Kaynak-Gelistirme-Toplulugu/ro-Control/releases/tag/vx.y.z

@@ -6,8 +6,10 @@ ro-Control requires the development packages listed below for successful builds.
 
 ### Fedora (Primary target)
 
+> **Requires Rust ≥ 1.82.** Install via [rustup](https://rustup.rs/) if your distro ships an older version.
+
 ```bash
-sudo dnf install cargo cmake extra-cmake-modules gcc-c++ \
+sudo dnf install cmake extra-cmake-modules gcc-c++ \
     kf6-qqc2-desktop-style \
     qt6-qtdeclarative-devel \
     qt6-qtbase-devel \
@@ -17,15 +19,17 @@ sudo dnf install cargo cmake extra-cmake-modules gcc-c++ \
 ### Arch Linux / Manjaro
 
 ```bash
-sudo pacman -S cargo cmake extra-cmake-modules qt6-declarative \
-    qt6-base qqc2-desktop-style gcc
+sudo pacman -S cmake extra-cmake-modules qt6-declarative \
+    qt6-base qqc2-desktop-style gcc rustup
+rustup default stable
 ```
 
 ### openSUSE
 
 ```bash
-sudo zypper install cargo cmake kf6-extra-cmake-modules \
-    qt6-declarative-devel kf6-qqc2-desktop-style
+sudo zypper install cmake kf6-extra-cmake-modules \
+    qt6-declarative-devel kf6-qqc2-desktop-style gcc-c++
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 ## Building
@@ -107,20 +111,21 @@ make lint
 ```text
 src/
 ├── main.rs          # Application entry point
-├── bridge.rs        # Bridge layer for UI and backend
-├── config.rs        # App constants (unchanged)
-├── core/            # Backend logic (unchanged)
-│   ├── detector.rs  # GPU/CPU/OS detection
-│   ├── installer.rs # DNF-based driver install
+├── bridge.rs        # CXX-Qt bridge (Rust ↔ QML)
+├── config.rs        # App constants (APP_ID, VERSION, etc.)
+├── core/            # Backend logic
+│   ├── detector.rs  # GPU/CPU/OS hardware detection
+│   ├── installer.rs # DNF-based driver install/remove
 │   ├── tweaks.rs    # GPU stats, GameMode, Wayland fix
-│   └── updater.rs   # GitHub release update check
-├── utils/           # Utilities (unchanged)
+│   └── updater.rs   # GitHub Releases update check
+├── utils/           # Shared utilities
 │   ├── command.rs   # Shell command runner
-│   ├── i18n.rs      # 16-language translation system
-│   └── logger.rs    # env_logger setup
-└── qml/             # Interface files
+│   ├── i18n.rs      # TR/EN translation system
+│   └── logger.rs    # simplelog setup
+└── qml/             # Qt Quick interface files
     ├── Main.qml     # Application window + sidebar nav
-    ├── pages/       # Page views
+    ├── Theme.qml    # Dark/light theme definitions
+    ├── pages/       # Install, Expert, Perf, Progress
     └── components/  # Reusable UI components
 ```
 
