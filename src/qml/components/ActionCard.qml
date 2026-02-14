@@ -14,7 +14,7 @@ Rectangle {
     radius: 8
     border.width: 1
     border.color: palette.mid
-    color: if (mouseArea.containsMouse) palette.alternateBase; else palette.base
+    color: mouseArea.containsMouse ? palette.alternateBase : palette.base
     
     // Visual feedback on hover/press
     Behavior on color {

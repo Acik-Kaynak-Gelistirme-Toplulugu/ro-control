@@ -25,6 +25,7 @@ cxx-qt-lib-extras = "0.7"
 
 # Core
 log = "0.4"
+simplelog = "0.12"
 env_logger = "0.11"
 ureq = { version = "3", features = ["json"] }
 serde = { version = "1", features = ["derive"] }

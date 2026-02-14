@@ -80,19 +80,13 @@ Controls.ApplicationWindow {
                         flat: contentStack.currentIndex !== modelData.idx
                         highlighted: contentStack.currentIndex === modelData.idx
                         
-                        contentItem: RowLayout {
+        contentItem: Controls.IconLabel {
+                            text: parent.text
+                            icon: parent.icon
+                            color: parent.highlighted ? Theme.primaryForeground : Theme.foreground
+                            display: Controls.AbstractButton.TextBesideIcon
+                            alignment: Qt.AlignLeft
                             spacing: 8
-                            Image {
-                                source: parent.icon.name ? parent.icon.name : ""
-                                sourceSize.width: 16
-                                sourceSize.height: 16
-                                // Use theme colors for icons if possible, or fallback to system
-                            }
-                            Text {
-                                text: parent.text
-                                font: Theme.fontBody
-                                color: parent.highlighted ? Theme.primaryForeground : Theme.foreground
-                            }
                         }
 
                         background: Rectangle {

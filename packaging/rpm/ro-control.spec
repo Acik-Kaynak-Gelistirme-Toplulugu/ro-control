@@ -1,6 +1,6 @@
 Name:           ro-control
 Version:        1.0.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Smart GPU driver manager for Linux
 
 %global debug_package %{nil}
@@ -21,6 +21,8 @@ BuildRequires:  qt6-qtdeclarative-devel
 BuildRequires:  kf6-qqc2-desktop-style
 
 Requires:       qt6-qtdeclarative%{?_isa}
+Requires:       qt6-qtwayland%{?_isa}
+Requires:       qt6-qtsvg%{?_isa}
 Requires:       kf6-qqc2-desktop-style
 Requires:       polkit
 Requires:       pciutils

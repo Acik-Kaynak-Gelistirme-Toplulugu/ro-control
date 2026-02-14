@@ -1,22 +1,48 @@
 // Logging setup
 use crate::config;
+use simplelog::*;
 use std::fs;
 
 pub fn init() {
-    // Set up env_logger with default INFO level
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
-        .format_timestamp_secs()
-        .init();
+    let mut loggers: Vec<Box<dyn SharedLogger>> = vec![];
 
-    // Ensure log directory exists
+    // Terminal logger (Info level by default, or RUST_LOG env)
+    if let Some(logger) = TermLogger::new(
+        LevelFilter::Info,
+        Config::default(),
+        TerminalMode::Mixed,
+        ColorChoice::Auto,
+    ) {
+        loggers.push(logger);
+    } else {
+        loggers.push(SimpleLogger::new(LevelFilter::Info, Config::default()));
+    }
+
+    // File logger (Debug level - captures everything)
     if let Some(data_dir) = dirs::data_local_dir() {
         let log_dir = data_dir.join(config::APP_NAME);
         if !log_dir.exists() {
             let _ = fs::create_dir_all(&log_dir);
         }
-        log::info!("========================================");
-        log::info!("ro-Control v{} Started", config::VERSION);
-        log::info!("Log directory: {:?}", log_dir);
-        log::info!("========================================");
+
+        let log_file_path = log_dir.join("ro-control.log");
+        if let Ok(file) = fs::File::create(&log_file_path) {
+            loggers.push(WriteLogger::new(
+                LevelFilter::Debug,
+                Config::default(),
+                file,
+            ));
+        }
     }
+
+    // Initialize combined logger
+    let _ = CombinedLogger::init(loggers);
+
+    log::info!("========================================");
+    log::info!("ro-Control v{} Started", config::VERSION);
+    if let Some(data_dir) = dirs::data_local_dir() {
+        let log_dir = data_dir.join(config::APP_NAME);
+        log::info!("Log directory: {:?}", log_dir);
+    }
+    log::info!("========================================");
 }
